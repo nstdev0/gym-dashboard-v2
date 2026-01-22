@@ -11,12 +11,12 @@ type ControllerSelector = (container: Container) => {
   execute: (req?: NextRequest, params?: Params) => Promise<unknown>;
 };
 
-export const createApiHandler = (selector: ControllerSelector) => {
-  return async (req: NextRequest, params: { params: Params }) => {
+export const createContext = (selector: ControllerSelector) => {
+  return async (req?: NextRequest, params?: { params: Params }) => {
     try {
       const container = getContainer();
       const controller = selector(container);
-      const result = await controller.execute(await req.json(), params?.params);
+      const result = await controller.execute(req, params?.params);
 
       if (result instanceof NextResponse) {
         return result;
@@ -29,7 +29,7 @@ export const createApiHandler = (selector: ControllerSelector) => {
         console.warn(`[API WARN] ${error.code}: ${error.message}`);
       } else {
         // Para errores desconocidos o bugs (500), SÍ queremos el stack trace completo.
-        console.error(`[API CRITICAL] ${req.method} ${req.url}`, error);
+        console.error(`[API CRITICAL] ${req?.method} ${req?.url}`, error);
       }
 
       if (error instanceof AppError) {

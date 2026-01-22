@@ -1,11 +1,9 @@
-import { getContainer } from "@/server/di/container";
-import { createApiHandler } from "@/server/lib/api-handler";
+import { createContext } from "@/server/lib/middleware";
 
-export const GET = async () => {
-  const members = await getContainer().getAllMembersController.execute();
-  return Response.json(members);
-};
+export const GET = createContext(
+  (container) => container.getAllMembersController,
+);
 
-export const POST = createApiHandler(
+export const POST = createContext(
   (container) => container.createMemberController,
 );
