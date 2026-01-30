@@ -7,17 +7,175 @@ datasource db {
   provider = "postgresql"
 }
 
+model Organization {
+  id String @id @default(cuid())
+
+  name String
+  slug String @unique
+
+  isActive Boolean @default(true)
+
+  members     Member[]
+  users       User[]
+  plans       Plan[]
+  products    Product[]
+  memberships Membership[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id String @id @default(cuid())
+
+  email        String @unique
+  passwordHash String
+
+  role Role @default(STAFF)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
 model Member {
   id String @id @default(cuid())
 
   firstName String
   lastName  String
 
+  gender    Gender
+  birthDate DateTime @db.Date
+
   email String @unique
   phone String
 
-  docNumber String @unique
+  docType   DocType
+  docNumber String
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  memberships Membership[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([docType, docNumber, organizationId])
+  @@unique([email, organizationId])
+  @@index([organizationId])
+}
+
+model Plan {
+  id String @id @default(cuid())
+
+  name        String
+  description String?
+
+  price        Float
+  durationDays Int
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  memberships Membership[]
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Membership {
+  id String @id @default(cuid())
+
+  startDate DateTime
+  endDate   DateTime
+
+  status    MembershipStatus
+  pricePaid Decimal          @db.Decimal(10, 2)
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([memberId])
+  @@index([status])
+  @@index([endDate])
+}
+
+model Product {
+  id  String  @id @default(cuid())
+  sku String? @unique
+
+  name        String
+  description String?
+
+  price Decimal @db.Decimal(10, 2)
+  cost  Decimal @db.Decimal(10, 2)
+
+  stock    Int @default(0)
+  minStock Int @default(5)
+
+  type ProductType
+
+  isActive Boolean @default(true)
+
+  // Relations
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sku, organizationId])
+  @@index([organizationId])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORG_OWNER
+  ORG_ADMIN
+  STAFF
+  TRAINER
+}
+
+enum DocType {
+  DNI
+  CE
+  PASSPORT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum ProductType {
+  CONSUMABLE
+  GEAR
+  MERCH
+  SERVICE
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+  CANCELLED
 }
