@@ -9,6 +9,7 @@ import {
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,8 +75,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Analytics />
+          <ClerkProvider>
+            {children}
+            <Analytics />
+          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>

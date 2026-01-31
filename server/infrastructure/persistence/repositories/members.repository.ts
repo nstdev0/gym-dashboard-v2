@@ -1,12 +1,12 @@
 import { BaseRepository } from "./base.repository";
 import { IMembersRepository } from "@repositories/members.repository.interface";
-import { Member } from "@entities/Member";
+import { DocType, Member } from "@entities/Member";
 import { MembersFilters } from "@repositories/members.repository.interface";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   CreateMemberInput,
   UpdateMemberInput,
-} from "@/server/application/dtos/create-member.dto";
+} from "@/server/domain/types/members";
 
 export class MembersRepository
   extends BaseRepository<
@@ -37,5 +37,16 @@ export class MembersRepository
       }
     }
     return whereClause;
+  }
+
+  async validateUnique(args: Partial<Member>): Promise<Member | null> {
+    const record = await this.findUnique({
+      docType_docNumber_organizationId: {
+        docType: args.docType,
+        docNumber: args.docNumber,
+        organizationId: args.organizationId,
+      },
+    });
+    return record ? record : null;
   }
 }

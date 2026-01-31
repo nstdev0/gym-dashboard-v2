@@ -5,7 +5,7 @@ import { PageableRequest } from "@/server/shared/common/pagination";
 export class GetAllMembersController {
   constructor(private readonly getAllMembersUseCase: IGetAllMembersUseCase) {}
 
-  async execute(input: PageableRequest<MembersFilters>) {
-    return await this.getAllMembersUseCase.execute(input);
+  async execute(filters: PageableRequest<MembersFilters>) {
+    return await this.getAllMembersUseCase.execute(filters);
   }
 }

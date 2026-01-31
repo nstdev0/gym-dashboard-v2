@@ -1,6 +1,6 @@
 import { Member } from "@/server/domain/entities/Member";
 import { IMembersRepository } from "../../repositories/members.repository.interface";
-import { CreateMemberInput } from "../../dtos/create-member.dto";
+import { CreateMemberInput } from "../../dtos/members.dto";
 import { ConflictError } from "@/server/domain/errors/common";
 
 export class CreateMemberUseCase {
@@ -10,17 +10,13 @@ export class CreateMemberUseCase {
     // Validaciones de negocio (Email y DNI únicos)
     const errors: string[] = [];
 
-    const [existingEmail, existingDoc] = await Promise.all([
-      this.membersRepo.findUnique({ email: input.email }),
-      this.membersRepo.findUnique({ docNumber: input.docNumber }),
-    ]);
+    const validateUnique = await this.membersRepo.validateUnique(input);
 
-    if (existingEmail) errors.push("Email");
-    if (existingDoc) errors.push("Document number");
+    if (validateUnique) errors.push("Email or Document number already exists");
 
     if (errors.length > 0) {
       const msg = errors.join(" and ");
-      throw new ConflictError(`${msg} already exists`);
+      throw new ConflictError(`${msg}`);
     }
 
     return await this.membersRepo.create(input);

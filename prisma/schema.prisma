@@ -33,8 +33,8 @@ model User {
 
   role Role @default(STAFF)
 
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,14 +48,16 @@ model Member {
   firstName String
   lastName  String
 
-  gender    Gender
-  birthDate DateTime @db.Date
+  gender    Gender?
+  birthDate DateTime? @db.Date
 
-  email String @unique
-  phone String
+  email String?
+  phone String?
 
   docType   DocType
   docNumber String
+
+  isActive Boolean @default(true)
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
@@ -68,6 +70,7 @@ model Member {
   @@unique([docType, docNumber, organizationId])
   @@unique([email, organizationId])
   @@index([organizationId])
+  @@index([lastName, firstName])
 }
 
 model Plan {
@@ -76,7 +79,7 @@ model Plan {
   name        String
   description String?
 
-  price        Float
+  price        Decimal @db.Decimal(10, 2)
   durationDays Int
 
   isActive Boolean @default(true)
@@ -98,7 +101,7 @@ model Membership {
   startDate DateTime
   endDate   DateTime
 
-  status    MembershipStatus
+  status    MembershipStatus @default(PENDING)
   pricePaid Decimal          @db.Decimal(10, 2)
 
   memberId String
@@ -120,8 +123,9 @@ model Membership {
 }
 
 model Product {
-  id  String  @id @default(cuid())
-  sku String? @unique
+  id String @id @default(cuid())
+
+  sku String?
 
   name        String
   description String?
@@ -136,7 +140,6 @@ model Product {
 
   isActive Boolean @default(true)
 
-  // Relations
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
 

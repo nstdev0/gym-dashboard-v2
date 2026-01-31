@@ -7,7 +7,7 @@ import { useState } from "react";
 import {
   CreateMemberInput,
   CreateMemberSchema,
-} from "@/server/application/dtos/create-member.dto";
+} from "@/server/application/dtos/members.dto";
 
 export function NewMemberForm() {
   const router = useRouter();

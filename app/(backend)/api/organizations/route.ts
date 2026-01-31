@@ -1,11 +1,10 @@
-import { MembersFilters } from "@/server/application/repositories/members.repository.interface";
+import { OrganizationsFilters } from "@/server/application/repositories/organizations.repository.interface";
 import { createContext } from "@/server/lib/api-handler";
 import { PageableRequest } from "@/server/shared/common/pagination";
 
-// Get All Members Paginated
 export const GET = createContext(
-  (container) => container.getAllMembersController,
-  async (req): Promise<PageableRequest<MembersFilters>> => {
+  (container) => container.getAllOrganizationsController,
+  async (req): Promise<PageableRequest<OrganizationsFilters>> => {
     const { searchParams } = req.nextUrl;
     return {
       page: Number(searchParams.get("page")) || 1,
@@ -17,8 +16,7 @@ export const GET = createContext(
   },
 );
 
-// Create Member
 export const POST = createContext(
-  (container) => container.createMemberController,
+  (container) => container.createOrganizationController,
   async (req) => await req.json(),
 );

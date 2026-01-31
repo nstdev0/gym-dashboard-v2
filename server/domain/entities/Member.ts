@@ -1,5 +1,16 @@
 import { BaseEntity } from "./_base";
 
+export enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+}
+
+export enum DocType {
+  DNI = "DNI",
+  CE = "CE",
+  PASSPORT = "PASSPORT",
+}
+
 export class Member extends BaseEntity {
   constructor(
     id: string,
@@ -8,11 +19,13 @@ export class Member extends BaseEntity {
     updatedAt: Date,
     public firstName: string,
     public lastName: string,
-    public birthDate: Date,
     public email: string,
-    public readonly docType: string,
-    public readonly docNumber: string,
-    public readonly phone: string,
+    public phone: string,
+    public docType: DocType,
+    public docNumber: string,
+    public isActive: boolean,
+    public birthDate?: Date,
+    public gender?: Gender,
   ) {
     super(id, organizationId, createdAt, updatedAt);
   }

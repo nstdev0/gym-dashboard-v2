@@ -11,13 +11,13 @@ export default async function MembersPage({ searchParams }: PageProps) {
   const page = Number(params.page) || 1;
   const limit = 10;
 
-  const paginatedMembers = await getContainer().getAllMembersController.execute(
-    {
-      page,
-      limit,
-      filters: { search: query },
-    },
-  );
+  const container = await getContainer();
+
+  const paginatedMembers = await container.getAllMembersController.execute({
+    page,
+    limit,
+    filters: { search: query },
+  });
 
   return <MembersViewPage paginatedMembers={paginatedMembers} />;
 }
