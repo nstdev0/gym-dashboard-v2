@@ -79,8 +79,19 @@ export default function MemberDetail({ member }: { member: Member }) {
             <p className="text-xs text-muted-foreground">Peso (kg)</p>
           </div>
           <div>
-            <p className="text-2xl font-bold">{member.imc || "-"}</p>
-            <p className="text-xs text-muted-foreground">IMC</p>
+            <p className={`text-2xl font-bold ${member.imc && member.imc < 18.5
+              ? "text-red-500"
+              : member.imc && member.imc < 25
+                ? "text-green-500"
+                : member.imc && member.imc < 30
+                  ? "text-yellow-500"
+                  : "text-red-500"
+              }`}>{member.imc || "-"}</p>
+            <p
+              className={`text-xs text-muted-foreground`}
+            >
+              IMC
+            </p>
           </div>
         </CardContent>
       </Card>

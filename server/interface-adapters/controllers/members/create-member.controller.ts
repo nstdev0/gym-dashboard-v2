@@ -1,20 +1,15 @@
 import { CreateMemberSchema } from "@/server/application/dtos/members.dto";
 import { ICreateMemberUseCase } from "@/server/application/use-cases/members/create-member.use-case";
-import { ValidationError } from "@/server/domain/errors/common";
+// Ya no necesitas importar ValidationError ni ZodError aquí
 
 export class CreateMemberController {
-  constructor(private readonly createMemberUseCase: ICreateMemberUseCase) {}
+  constructor(private readonly createMemberUseCase: ICreateMemberUseCase) { }
 
   async execute(input: unknown) {
-    const validatedInput = CreateMemberSchema.safeParse(input);
+    // Si la validación falla, esto lanza un "ZodError" automáticamente.
+    // Api-handler lo atrapará y devolverá los errores detallados al frontend.
+    const data = CreateMemberSchema.parse(input);
 
-    if (!validatedInput.success) {
-      throw new ValidationError(
-        "Datos inválidos",
-        validatedInput.error.message,
-      );
-    }
-
-    return await this.createMemberUseCase.execute(validatedInput.data);
+    return await this.createMemberUseCase.execute(data);
   }
 }

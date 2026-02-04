@@ -1,5 +1,5 @@
 import { getContainer } from "@/server/di/container";
-import MembersViewPage from "./view-page";
+import MembersViewPage from "./components/view-page";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

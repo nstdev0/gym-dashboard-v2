@@ -8,7 +8,7 @@ import { Suspense } from "react";
 import { Member } from "@/server/domain/entities/Member";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
-import { MembersTable } from "./components/members-table";
+import { MembersTable } from "./members-table";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ import {
   usePathname,
   useParams,
 } from "next/navigation";
-import Loading from "./loading";
+import Loading from "../loading";
 import Link from "next/link";
 import { PageableResponse } from "@/server/shared/common/pagination";
 

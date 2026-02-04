@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
+import Image from "next/image";
 
 export const columns: ColumnDef<Member>[] = [
   {
@@ -26,15 +27,30 @@ export const columns: ColumnDef<Member>[] = [
     header: "Miembro",
     cell: ({ row }) => {
       const member = row.original;
+      const params = useParams();
+      const slug = params.slug as string;
       return (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Users className="w-4 h-4 text-primary" />
+            {member.image ? (
+              <Image
+                src={member.image}
+                alt={`${member.firstName} ${member.lastName}`}
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            ) : (
+              <Users className="w-4 h-4 text-primary" />
+            )}
           </div>
           <div>
-            <p className="font-medium text-foreground">
+            <Link
+              href={`/${slug}/admin/members/${member.id}`}
+              className="font-medium text-foreground"
+            >
               {member.firstName} {member.lastName}
-            </p>
+            </Link>
           </div>
         </div>
       );

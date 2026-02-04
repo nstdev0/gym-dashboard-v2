@@ -10,11 +10,6 @@ export class CreateMemberUseCase {
   async execute(input: CreateMemberInput): Promise<Member> {
     const errors: string[] = [];
 
-    // Sanitize Email: Convert empty string to null to avoid unique constraint violations
-    if (input.email && input.email.trim() === "") {
-      input.email = undefined; // Prisma treats undefined as "do not set" or null if nullable
-    }
-
     const validateUnique = await this.membersRepo.validateUnique(input);
 
     if (validateUnique) errors.push("Email or Document number already exists");

@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { prisma } from "@/server/infrastructure/persistence/prisma";
 import { LandingPage } from "@/components/landing-page";
 
@@ -35,25 +36,34 @@ export default async function RootPage() {
     );
   }
 
-  // --- 4. RENDERIZAR LANDING CON CONTEXTO ---
-  // Pasamos la info del usuario a la Landing Page para que muestre "Ir al Dashboard"
-  // en lugar de "Comenzar" si ya tiene sesión.
-
-  let dashboardUrl = "/sign-in"; // Default fallback (aunque onboarding ya no existe como página, Clerk lo manejará)
+  // --- 4. ENRUTAMIENTO AUTOMÁTICO ---
+  // Si el usuario ya tiene su "casa", lo mandamos directo.
 
   // CASO A: Es el Dueño del Sistema (God Mode)
   if (user.role === "GOD") {
-    dashboardUrl = "/system/dashboard";
+    redirect("/system/dashboard");
   }
-  // CASO B: Usuario con Organización
 
-  else if (user.organization) {
-    dashboardUrl = `/${user.organization.slug}/admin/dashboard`;
+  // CASO B: Usuario con Organización
+  if (user.organization) {
+    redirect(`/${user.organization.slug}/admin/dashboard`);
   }
-  // CASO C: Usuario sin organización
-  // Dejamos que Clerk maneje su flujo de crear organización, o lo mandamos al home
-  // Si clickea "Ir al Dashboard" y no tiene org, Clerk debería interceptar si configuramos protected routes
-  // O podemos mandarlo a /sign-up que lo llevará al flow de Clerk
+
+  // CASO C: Usuario sin organización (Orphan)
+  // Mostramos la Landing Page. El botón "Ir al Dashboard" (o iniciar sesión)
+  // manejará el resto, o Clerk interceptará si intentan acceder a rutas protegidas.
+  // Podríamos redirigir a /sign-up para forzar creación de org, pero mejor dejar que elijan.
+
+  let dashboardUrl = "/sign-in";
+  if (user) {
+    // Si está logueado pero no tiene org, el botón podría llevar al portal de usuario de Clerk
+    // o a una página explicativa. Por ahora, dejamos que vaya al sign-in 
+    // o manejamos el dashboardUrl como un falback.
+    // Sencillamente mostramos la landing, el componente LandingPage decidirá qué botón mostrar.
+    // Pero necesitamos pasarle un URL válido si queremos que el botón "Ir al Dashboard" haga algo útil.
+    // Si no tiene org, tal vez queramos que cree una.
+    dashboardUrl = "/sign-up"; // Esto disparará el flujo de Clerk
+  }
 
   return <LandingPage dashboardUrl={dashboardUrl} isLoggedIn={true} />;
 }

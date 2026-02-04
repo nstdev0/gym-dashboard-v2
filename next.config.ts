@@ -6,7 +6,14 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["localhost:3000", "prthmgx3-3000.brs.devtunnels.ms"],
     },
   },
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
   reactCompiler: true,
 };
 
