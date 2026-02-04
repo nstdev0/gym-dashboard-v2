@@ -12,6 +12,9 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryProvider } from "@/components/react-query-provider";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "./(backend)/api/uploadthing/core";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,6 +82,7 @@ export default function RootLayout({
         >
           <ClerkProvider>
             <ReactQueryProvider>
+              <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
               {children}
               <Analytics />
               <Toaster />

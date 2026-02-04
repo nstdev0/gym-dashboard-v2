@@ -1,10 +1,16 @@
 @import "tailwindcss";
 
+@import "uploadthing/tw/v4";
+@source "../node_modules/@uploadthing/react/dist";
+/** <-- depends on your project structure */
+
+
 @keyframes mobile-slide-in {
   from {
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -17,7 +23,8 @@
 
 .animate-mobile-slide-in-footer {
   animation: mobile-slide-in 0.5s ease-out forwards;
-  opacity: 0; /* Ensure hidden initially */
+  opacity: 0;
+  /* Ensure hidden initially */
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -107,9 +114,11 @@
   :root[data-font="sans"] body {
     font-family: var(--font-inter) !important;
   }
+
   :root[data-font="serif"] body {
     font-family: var(--font-playfair) !important;
   }
+
   :root[data-font="mono"] body {
     font-family: var(--font-jetbrains-mono) !important;
   }
@@ -181,6 +190,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

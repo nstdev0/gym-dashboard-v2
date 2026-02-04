@@ -3,10 +3,25 @@ import CapitalizeText from "./capitalize-text";
 import { DocType, Gender } from "@/server/domain/entities/Member";
 
 // --- HELPERS ---
-const optionalString = z.string().trim().transform(val => val === "" ? undefined : val).optional();
 const optionalNumber = z.preprocess(
   (val) => (val === "" ? undefined : val),
   z.coerce.number().min(0).optional()
+);
+
+// Helper para campos opcionales que deben ser null si están vacíos (evita constraint unique en "")
+const optionalEmail = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.string().email("Email inválido").nullable().optional()
+);
+
+const optionalPhone = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.string().trim().regex(/^9\d{8}$/, "El teléfono debe empezar con 9 y tener 9 dígitos").nullable().optional()
+);
+
+const optionalUrl = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.string().url("URL inválida").nullable().optional()
 );
 
 // --- 1. DEFINIR LA FORMA BASE (Sin Refinements) ---
@@ -31,21 +46,15 @@ const MemberBaseSchema = z.object({
     .regex(/^\d+$/, "Solo se permiten números")
     .trim(),
 
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-
-  phone: z
-    .string()
-    .trim()
-    .regex(/^9\d{8}$/, "El teléfono debe empezar con 9 y tener 9 dígitos")
-    .optional()
-    .or(z.literal("")),
+  email: optionalEmail,
+  phone: optionalPhone,
 
   birthDate: z.coerce.date().optional(),
   gender: z.nativeEnum(Gender, { message: "Género inválido" }).optional(),
   height: optionalNumber,
   weight: optionalNumber,
   imc: optionalNumber,
-  image: z.string().url("URL inválida").optional().or(z.literal("")),
+  image: optionalUrl,
   isActive: z.boolean().default(true),
 });
 

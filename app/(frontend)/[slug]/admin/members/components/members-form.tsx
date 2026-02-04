@@ -20,6 +20,7 @@ import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { Member } from "@/server/domain/entities/Member";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { AvatarUploader } from "@/components/avatar-uploader";
 
 type MemberFormProps = {
   initialData?: Member;
@@ -95,11 +96,28 @@ export default function MemberForm({
 
   const onInvalid = (errors: any) => {
     console.log("RHF bloqueo el envio. Errores detectados: ", errors);
-
-  }
+  };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
+
+      <div className="flex justify-center mb-6">
+        <Controller
+          name="image"
+          control={form.control}
+          render={({ field }) => (
+            <AvatarUploader
+              value={field.value ?? undefined}
+              onChange={(url) => {
+                // AvatarUploader ya sube la imagen y devuelve la URL
+                console.log("Avatar URL recibida:", url);
+                field.onChange(url);
+              }}
+              fileNamePrefix={`${form.getValues("firstName") || "member"}-${form.getValues("lastName") || ""}`}
+            />
+          )}
+        />
+      </div>
 
       {/* SECCIÓN: DATOS PERSONALES */}
       <div className="space-y-4">
@@ -175,6 +193,7 @@ export default function MemberForm({
                 <FieldLabel>Email</FieldLabel>
                 <Input
                   {...field}
+                  value={field.value ?? ""}
                   aria-invalid={fieldState.invalid}
                   placeholder="juan@ejemplo.com"
                 />
@@ -192,6 +211,7 @@ export default function MemberForm({
                 <FieldLabel>Celular</FieldLabel>
                 <Input
                   {...field}
+                  value={field.value ?? ""}
                   aria-invalid={fieldState.invalid}
                   placeholder="9..."
                   maxLength={9}
