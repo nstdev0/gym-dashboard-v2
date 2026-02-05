@@ -17,10 +17,13 @@ export class MembersRepository
     MembersFilters
   >
   implements IMembersRepository {
-  async buildQueryFilters(
+  async buildPrismaClauses(
     filters: MembersFilters,
-  ): Promise<Prisma.MemberWhereInput> {
-    const whereClause: Prisma.MemberWhereInput = {};
+  ): Promise<[Prisma.MemberWhereInput, Prisma.MemberOrderByWithRelationInput]> {
+    const ALLOWED_SORT_FIELDS = ["createdAt", "firstName", "lastName", "gender"] as const
+
+    // Where
+    const whereClause: Prisma.MemberWhereInput = {}
 
     if (filters.search) {
       const searchTerms = filters.search.trim().split(/\s+/).filter(Boolean);
@@ -31,11 +34,25 @@ export class MembersRepository
             { firstName: { contains: term, mode: "insensitive" } },
             { lastName: { contains: term, mode: "insensitive" } },
             { email: { contains: term, mode: "insensitive" } },
+            { phone: { contains: term, mode: "insensitive" } }
           ],
-        }));
+        }))
       }
     }
-    return whereClause;
+
+    // OrderBy
+    let OrderByClause: Prisma.MemberOrderByWithRelationInput = { createdAt: "desc" }
+
+    if (filters.sort) {
+      const [field, direction] = filters.sort.split("-")
+      const isValidField = (ALLOWED_SORT_FIELDS as readonly string[]).includes(field)
+      const isValidDirection = direction === "asc" || direction === "desc"
+
+      if (isValidField && isValidDirection) {
+        OrderByClause = { [field]: direction as Prisma.SortOrder }
+      }
+    }
+    return [whereClause, OrderByClause];
   }
 
   async validateUnique(args: Partial<Member>): Promise<Member | null> {

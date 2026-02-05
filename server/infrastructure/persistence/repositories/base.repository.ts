@@ -19,27 +19,28 @@ export abstract class BaseRepository<
   constructor(
     protected readonly model: D,
     protected readonly organizationId?: string,
-  ) {}
+  ) { }
 
-  protected abstract buildQueryFilters(
+  protected abstract buildPrismaClauses(
     filters: TFilters,
-  ): Promise<Parameters<D["findMany"]>[0]["where"]>;
+    // ): Promise<[Parameters<D["findMany"]>[0]["where"], Parameters<D["findMany"]>[0]["orderBy"]]>;
+  ): Promise<[any, any]>;
 
   async findAll(
     request: PageableRequest<TFilters> = { page: 1, limit: 10 },
-    options?: {
-      orderBy?: Parameters<D["findMany"]>[0]["orderBy"];
-      include?: Parameters<D["findMany"]>[0]["include"];
-    },
   ): Promise<PageableResponse<TEntity>> {
-    const { page, limit, filters } = request;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, filters } = request;
 
-    let where: any = {};
+    const safePage = page < 1 ? 1 : page
+    const skip = (safePage - 1) * limit;
+
+    let where = undefined
+    let orderBy = { createdAt: "desc" }
 
     if (filters) {
-      const dynamicFilters = await this.buildQueryFilters(filters);
-      where = { ...where, ...dynamicFilters };
+      const [whereClause, orderByClause] = await this.buildPrismaClauses(filters);
+      where = whereClause
+      orderBy = orderByClause
     }
 
     if (this.organizationId) {
@@ -52,8 +53,7 @@ export abstract class BaseRepository<
         skip,
         take: limit,
         where,
-        orderBy: options?.orderBy ?? { createdAt: "desc" },
-        include: options?.include,
+        orderBy: orderBy,
       }),
     ]);
 

@@ -7,6 +7,7 @@ import {
 
 export interface MembersFilters {
   search?: string;
+  sort?: string
 }
 
 export interface IMembersRepository extends IBaseRepository<

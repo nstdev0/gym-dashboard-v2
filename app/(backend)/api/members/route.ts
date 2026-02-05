@@ -10,7 +10,8 @@ export const GET = createContext(
       page: Number(searchParams.get("page")) || 1,
       limit: Number(searchParams.get("limit")) || 10,
       filters: {
-        search: searchParams.get("query") || undefined,
+        search: searchParams.get("search") || undefined,
+        sort: searchParams.get("sort") || undefined
       },
     };
   },

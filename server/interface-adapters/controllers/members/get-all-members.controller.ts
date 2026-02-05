@@ -3,9 +3,9 @@ import { IGetAllMembersUseCase } from "@/server/application/use-cases/members/ge
 import { PageableRequest } from "@/server/shared/common/pagination";
 
 export class GetAllMembersController {
-  constructor(private readonly useCase: IGetAllMembersUseCase) {}
+  constructor(private readonly useCase: IGetAllMembersUseCase) { }
 
-  async execute(filters: PageableRequest<MembersFilters>) {
-    return await this.useCase.execute(filters);
+  async execute(request: PageableRequest<MembersFilters>) {
+    return await this.useCase.execute(request);
   }
 }
