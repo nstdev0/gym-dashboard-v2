@@ -9,12 +9,12 @@ import {
 } from "@repositories/members.repository.interface";
 
 export class GetAllMembersUseCase {
-  constructor(private readonly membersRepo: IMembersRepository) { }
+  constructor(private readonly repository: IMembersRepository) { }
 
   async execute(
     request: PageableRequest<MembersFilters>,
   ): Promise<PageableResponse<Member>> {
-    return await this.membersRepo.findAll(request);
+    return await this.repository.findAll(request);
   }
 }
 

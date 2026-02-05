@@ -122,7 +122,7 @@ export default function MemberForm({
       {/* SECCIÓN: DATOS PERSONALES */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Datos Personales</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Controller
             name="firstName"
             control={form.control}
@@ -228,7 +228,7 @@ export default function MemberForm({
       {/* SECCIÓN: IDENTIFICACIÓN */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Identificación</h3>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
           <Controller
             name="docType"
             control={form.control}
@@ -289,7 +289,7 @@ export default function MemberForm({
       {/* SECCIÓN: FÍSICO Y MÉDICO */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Información Física</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Controller
             name="gender"
             control={form.control}

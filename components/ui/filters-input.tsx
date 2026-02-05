@@ -3,83 +3,131 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Button } from "./button";
-import { ArrowUpDown, X } from "lucide-react";
+import { ArrowUpDown, Filter, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
-export interface UiSortOption<T> {
+export interface FilterOption {
+    label: string,
+    value: string
+}
+
+export interface SortOption<T> {
     label: string;
     field: keyof T;
-    direction: 'asc' | 'desc';
     value: string;
 }
 
-interface FiltersInputProps<T> {
-    sortOptions: UiSortOption<T>[];
-    defaultSort?: string; // Opcional: para saber qué mostrar si no hay URL params
+export interface SelectFilterConfig {
+    key: string,
+    label: string,
+    options: FilterOption[]
 }
 
-export default function FiltersInput<T>({
-    sortOptions,
+export interface FilterConfiguration<T> {
+    sort?: SortOption<T>[],
+    filters?: SelectFilterConfig[]
+}
+
+interface FilterInputProps<T> {
+    config: FilterConfiguration<T>,
+    defaultSort?: string
+}
+
+export default function SmartFilters<T>({
+    config,
     defaultSort = "createdAt-desc"
-}: FiltersInputProps<T>) {
+}: FilterInputProps<T>) {
     const router = useRouter()
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    const currentSort = searchParams.get("sort") || defaultSort
-
-    const createQueryString = useCallback((name: string, value: string) => {
+    // Lógica URL
+    const updateUrl = useCallback((key: string, value: string | null) => {
         const params = new URLSearchParams(searchParams.toString())
-        params.delete("page")
-        params.set(name, value)
-        return params.toString()
-    }, [searchParams])
 
-    const handleSortChange = (value: string) => {
-        router.push(`${pathname}?${createQueryString("sort", value)}`, { scroll: false })
-    }
+        if (value && value !== "all") { // Si no es nulo y no es "all"
+            params.set(key, value)
+        } else {
+            params.delete(key) // Si es "all" o null, borramos de la URL
+        }
 
-    // Opcional: Función para limpiar filtros
-    const clearFilters = () => {
-        router.push(pathname)
-    }
+        if (key !== "page") params.delete("page")
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+
+    }, [searchParams, pathname, router])
+
+    const clearAll = () => router.push(pathname)
+    const hasActiveFilters = searchParams.toString().length > 0;
 
     return (
-        <div className="flex items-center gap-2">
-            {/* Controlado: value={currentSort} */}
-            <Select value={currentSort} onValueChange={handleSortChange}>
-                <SelectTrigger className="w-[180px] h-9">
-                    <div className="flex items-center gap-2">
-                        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Ordenar por" />
-                    </div>
-                </SelectTrigger>
-                <SelectContent>
-                    {/* Opciones estáticas comunes */}
-                    <SelectItem value="createdAt-desc">Más recientes</SelectItem>
-                    <SelectItem value="createdAt-asc">Más antiguos</SelectItem>
+        <div className="flex flex-wrap items-center gap-2">
 
-                    {/* Opciones dinámicas inyectadas */}
-                    {sortOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            {/* SORT (Sin cambios mayores, solo value fallback seguro) */}
+            {config.sort && config.sort.length > 0 && (
+                <Select
+                    value={searchParams.get("sort") || defaultSort}
+                    onValueChange={(val) => updateUrl("sort", val)}
+                >
+                    <SelectTrigger className="w-[180px] h-9">
+                        <div className="flex items-center gap-2">
+                            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Ordenar" />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="createdAt-desc">Más recientes</SelectItem>
+                        <SelectItem value="createdAt-asc">Más antiguos</SelectItem>
+                        {config.sort.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
 
-            {/* Botón visual (Reset o Acción adicional) */}
-            {(searchParams.toString().length > 0) && (
+            {/* FILTROS DINÁMICOS */}
+            {config.filters?.map((filterConfig) => {
+                // Obtenemos el valor actual o undefined (para que Radix muestre el placeholder)
+                const currentValue = searchParams.get(filterConfig.key) || undefined;
+
+                return (
+                    <Select
+                        key={filterConfig.key}
+                        value={currentValue}
+                        onValueChange={(val) => updateUrl(filterConfig.key, val)}
+                    >
+                        <SelectTrigger className="w-[160px] h-9 border-dashed">
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                                {/* SelectValue mostrará automáticamente el label de la opción seleccionada */}
+                                <SelectValue placeholder={filterConfig.label} />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {/* Usamos "all" explícitamente */}
+                            <SelectItem value="all">Todos ({filterConfig.label})</SelectItem>
+                            {filterConfig.options.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )
+            })}
+
+            {hasActiveFilters && (
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={clearFilters}
-                    className="h-9 px-2 text-muted-foreground hover:text-foreground"
+                    onClick={clearAll}
+                    className="h-9 px-2 lg:px-3"
                 >
                     <X className="mr-2 h-4 w-4" />
                     Limpiar
                 </Button>
             )}
         </div>
-    )
+    );
 }

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PageHeader } from "@/components/ui/page-header";
 
 // ==============================================
 // MOCK DATA - Replace with real data fetching
@@ -222,24 +223,17 @@ export default function DashboardPage() {
             breadcrumbs={[{ label: "Admin" }, { label: "Dashboard" }]}
         >
             <div className="flex flex-col space-y-4 sm:space-y-6 overflow-auto pb-4 scrollbar-hide">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Dashboard
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Resumen general de tu gimnasio
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
+                <PageHeader
+                    title="Dashboard"
+                    description="Resumen general de tu gimnasio"
+                    actions={
                         <Button variant="outline" size="sm" className="gap-2">
                             <Calendar className="h-4 w-4" />
                             <span className="hidden sm:inline">Últimos 30 días</span>
                             <span className="sm:hidden">30 días</span>
                         </Button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {/* KPI Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

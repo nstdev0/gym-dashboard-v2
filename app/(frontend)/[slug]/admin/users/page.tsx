@@ -7,20 +7,14 @@ interface PageProps {
     params: Promise<{ slug: string }>;
 }
 
-export default async function UsersPage({ searchParams, params }: PageProps) {
-    const sp = await searchParams;
-    const p = await params; // Slug might be needed for layout but layout handles it via context usually or link
-
-    const query = (sp.query as string) || "";
-    const page = Number(sp.page) || 1;
+export default async function UsersPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    const search = (params.search as string) || undefined;
+    const sort = (params.sort as string) || undefined
+    const role = (params.role as string) || undefined
+    const status = (params.status as string) || undefined
+    const page = Number(params.page) || 1;
     const limit = 10;
-    const role = (sp.role as Role) || undefined;
-
-    // Note: isActive filter logic might need refinement if searchParams only passes strings
-    // Usually string "true" -> true. But here we might want to default to showing all?
-    // Or filter explicit state? The endpoint logic was `isActive: searchParams.get("isActive") === "true"`.
-    // If undefined/null, it probably shouldn't filter.
-    // We'll leave isActive filter out of the main list page URL for now unless specifically requested, or defaults to all.
 
     const container = await getContainer();
 
@@ -28,9 +22,10 @@ export default async function UsersPage({ searchParams, params }: PageProps) {
         page,
         limit,
         filters: {
-            search: query,
+            search: search,
+            sort: sort,
             role: role,
-            // isActive: undefined // Not filtering by default
+            status: status
         },
     });
 

@@ -1,25 +1,22 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/server/infrastructure/persistence/prisma";
+import { Role } from "@/generated/prisma/client";
 
 export async function POST(req: Request) {
+  // 1. Verificación de firma (Boilerplate estándar de Clerk)
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+  if (!WEBHOOK_SECRET) throw new Error("Falta el CLERK_WEBHOOK_SECRET");
 
-  if (!WEBHOOK_SECRET) {
-    throw new Error(
-      "Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local",
-    );
-  }
-
-  // Verificar firma (Seguridad: Asegurar que viene de Clerk)
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error occured -- no svix headers", { status: 400 });
+    return new Response("Error: Faltan headers svix", { status: 400 });
   }
 
   const payload = await req.json();
@@ -33,197 +30,175 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-  } catch {
-    return new Response("Error occured", { status: 400 });
+  } catch (err) {
+    return new Response("Error verificando webhook", { status: 400 });
   }
 
-  // --- LÓGICA DE NEGOCIO ---
+  // 2. Manejo de Eventos
   const eventType = evt.type;
 
-  // CASO 1: Se crea una Organización en Clerk
-  if (eventType === "organization.created") {
-    const { id, name, slug, created_by } = evt.data;
+  console.log(`📨 Webhook recibido: ${eventType}`);
 
-    console.log(`🏢 Nueva Organización detectada en Clerk: ${name} (${slug})`);
+  try {
+    switch (eventType) {
+      // ------------------------------------------------------------------
+      // CASO 1: SE CREA LA ORGANIZACIÓN
+      // ------------------------------------------------------------------
+      case "organization.created": {
+        const { id, name, slug, image_url, created_by } = evt.data;
 
-    try {
-      // 1. Buscamos el plan Gratuito por defecto
-      const freePlan = await prisma.organizationPlan.findUnique({
-        where: { slug: "free-trial" },
-      });
-
-      if (!freePlan) {
-        console.error("❌ ERROR CRÍTICO: No existe el plan 'free-trial' en la DB.");
-        return new Response("Plan not found", { status: 500 });
-      }
-
-      // 2. Transacción: Crear Org + Suscripción + Vincular Creador
-      await prisma.$transaction(async (tx) => {
-        // A. Crear la Organización en Postgres
-        const newOrg = await tx.organization.create({
-          data: {
-            id: id, // IMPORTANTE: Usar el mismo ID de Clerk
-            name: name,
-            slug: slug, // Clerk te dará algo como "olimpo-gym-42a1"
-            organizationPlanId: freePlan.id,
-            isActive: true,
-          },
+        const freePlan = await prisma.organizationPlan.findUnique({
+          where: { slug: "free-trial" },
         });
 
-        // B. Crear Suscripción Trial
-        await tx.subscription.create({
-          data: {
-            organizationId: newOrg.id,
-            organizationPlanId: freePlan.id,
-            status: "TRIALING",
-            currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 días
-          },
-        });
+        if (!freePlan) {
+          console.error("❌ ERROR CRÍTICO: No existe el plan 'free-trial' en la DB.");
+          return new Response("Plan not found", { status: 500 });
+        }
 
-        // C. Vincular al usuario creador (Owner)
-        if (created_by) {
-          // Primero intentamos actualizar si ya existe
-          // Pero si el webhook de usuario no ha llegado, podríamos necesitar crearlo (JIT)
-          // Para simplificar y seguir la petición del usuario, usaremos update, 
-          // pero si falla, es responsabilidad del webhook de usuario llegar.
-          // Sin embargo, el usuario sugirió JIT antes. 
-          // En este snippet solicitado por el usuario, usan tx.user.update directo.
-          // Lo haré como pidió, pero agregaré el catch para no romper toda la transacción si el user no está.
+        // Transacción: Crear Org + Subscription (idempotente con upsert)
+        await prisma.$transaction(async (tx) => {
+          // A. Crear/Actualizar Organización
+          await tx.organization.upsert({
+            where: { id },
+            update: {
+              name,
+              slug: slug || name,
+              image: image_url,
+              organizationPlanId: freePlan.id
+            },
+            create: {
+              id,
+              name,
+              slug: slug || name,
+              image: image_url,
+              organizationPlanId: freePlan.id
+            },
+          });
 
-          try {
-            await tx.user.update({
-              where: { id: created_by },
+          // B. Crear Subscription si no existe
+          const existingSub = await tx.subscription.findUnique({
+            where: { organizationId: id }
+          });
+
+          if (!existingSub) {
+            await tx.subscription.create({
               data: {
-                organizationId: newOrg.id,
-                role: "OWNER",
+                organizationId: id,
+                organizationPlanId: freePlan.id,
+                status: "TRIALING",
+                currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 días trial
               },
             });
-          } catch (e) {
-            console.warn(`User ${created_by} not found in DB yet. Waiting for user.created webhook.`);
+          }
+        });
+
+        console.log(`✅ Organización creada: ${name} (${slug})`);
+        break;
+      }
+
+      // ------------------------------------------------------------------
+      // CASO 2: SE CREA LA MEMBRESÍA (Usuario se une a Organización)
+      // ------------------------------------------------------------------
+      case "organizationMembership.created": {
+        const { organization, public_user_data, role } = evt.data;
+
+        // Mapear rol de Clerk a nuestro enum
+        // Clerk usa: "org:admin", "org:member", o roles custom
+        // El creador de la org tiene role = "org:admin" automáticamente
+        let appRole: Role = Role.STAFF; // Default
+
+        if (role === "org:admin") {
+          // Verificar si es el creador (Owner) o un admin invitado
+          const org = await prisma.organization.findUnique({
+            where: { id: organization.id },
+            select: { createdAt: true }
+          });
+
+          // Si la org se creó hace menos de 1 minuto, probablemente es el creador
+          const isCreator = org && (Date.now() - org.createdAt.getTime() < 60000);
+          appRole = isCreator ? Role.OWNER : Role.ADMIN;
+        } else if (role === "org:member") {
+          appRole = Role.STAFF;
+        } else {
+          // Roles custom: "org:trainer", "org:god", etc.
+          const customRole = role?.replace("org:", "").toUpperCase();
+          if (customRole && Object.values(Role).includes(customRole as Role)) {
+            appRole = customRole as Role;
           }
         }
-      });
-      console.log(`✅ Organización creada y sincronizada: ${name}`);
-    } catch (error) {
-      console.error("❌ Error creando organización en DB:", error);
-      return new Response("Error creating organization in DB", { status: 500 });
+
+        // Upsert para idempotencia (Clerk puede reintentar eventos)
+        await prisma.user.upsert({
+          where: { id: public_user_data.user_id },
+          create: {
+            id: public_user_data.user_id,
+            organizationId: organization.id,
+            role: appRole,
+            firstName: public_user_data.first_name || null,
+            lastName: public_user_data.last_name || null,
+            image: public_user_data.image_url || null,
+            email: public_user_data.identifier, // ✅ El email está aquí, no en public_metadata
+            isActive: true,
+          },
+          update: {
+            organizationId: organization.id,
+            role: appRole,
+            firstName: public_user_data.first_name || undefined,
+            lastName: public_user_data.last_name || undefined,
+            image: public_user_data.image_url || undefined,
+            isActive: true,
+          }
+        });
+
+        console.log(`✅ Usuario ${public_user_data.identifier} vinculado a org ${organization.id} como ${appRole}`);
+        break;
+      }
+
+      // ------------------------------------------------------------------
+      // CASO 3: SE ELIMINA LA MEMBRESÍA (Usuario deja la organización)
+      // ------------------------------------------------------------------
+      case "organizationMembership.deleted": {
+        const { public_user_data } = evt.data;
+
+        await prisma.user.update({
+          where: { id: public_user_data.user_id },
+          data: {
+            organizationId: null,
+            isActive: false,
+          }
+        });
+
+        console.log(`🔓 Usuario ${public_user_data.identifier} desvinculado de organización`);
+        break;
+      }
+
+      // ------------------------------------------------------------------
+      // CASO 4: SE ACTUALIZA LA ORGANIZACIÓN
+      // ------------------------------------------------------------------
+      case "organization.updated": {
+        const { id, name, slug, image_url } = evt.data;
+
+        await prisma.organization.update({
+          where: { id },
+          data: {
+            name,
+            slug: slug || undefined,
+            image: image_url || undefined,
+          }
+        });
+
+        console.log(`🔄 Organización actualizada: ${name}`);
+        break;
+      }
+
+      default:
+        console.log(`⏭️ Evento no manejado: ${eventType}`);
     }
+
+    return NextResponse.json({ success: true, message: "Webhook procesado" });
+  } catch (error) {
+    console.error("❌ Error procesando webhook:", error);
+    return NextResponse.json({ success: false, error: "Fallo interno" }, { status: 500 });
   }
-
-  // CASO 2: Un usuario se une a una Organización (o la crea y se une automáticamente)
-  if (eventType === "organizationMembership.created") {
-    const { organization, public_user_data, public_metadata } = evt.data;
-
-    try {
-      // Upsert: Crear si no existe, actualizar si ya existía (ej: re-invitación)
-      // Esto maneja el caso de "Invitación a Organización" que crea al usuario directamente en este evento si no existe
-      await prisma.user.upsert({
-        where: { id: public_user_data.user_id },
-        create: {
-          id: public_user_data.user_id,
-          email: public_user_data.identifier,
-          firstName: public_user_data.first_name || "Miembro",
-          lastName: public_user_data.last_name || "",
-          organizationId: organization.id,
-          // Leemos el rol específico desde metadata de la invitación (si existe), o fallback a STAFF
-          role: (public_metadata?.appRole as any) || "STAFF",
-          isActive: true,
-          image: public_user_data.image_url,
-          passwordHash: "OAUTH_MANAGED"
-        },
-        update: {
-          organizationId: organization.id,
-          isActive: true, // Reactivar si estaba inactivo
-          // Actualizar rol si viene en metadata (re-invitación con nuevo rol)
-          ...(public_metadata?.appRole ? { role: public_metadata.appRole as any } : {})
-        }
-      });
-
-      console.log(
-        `🔗 Nuevo miembro upserted en Org ${organization.id}: ${public_user_data.identifier}`,
-      );
-    } catch (error) {
-      console.error("❌ Error vinculando/creando usuario:", error);
-      // No devolvemos 500 aquí para no reintentar infinitamente si falla algo puntual
-    }
-  }
-
-  if (eventType === "user.created") {
-    const { id, email_addresses, public_metadata, image_url, first_name, last_name } = evt.data;
-
-    // OrganizationId can be optional (orphan users)
-    const organizationId = (public_metadata.organizationId as string) || null;
-    const role = (public_metadata.role as string) || "OWNER"; // Default fallback (maybe Member is safer, but keeping owner-ish behavior for self-signups if any)
-
-    try {
-      await prisma.user.upsert({
-        where: {
-          id: id,
-        },
-        create: {
-          id: id,
-          email: email_addresses[0].email_address,
-          image: image_url,
-          role: role as any,
-          passwordHash: "OAUTH_MANAGED",
-          organizationId: organizationId,
-          firstName: first_name ?? null,
-          lastName: last_name ?? null,
-          isActive: true,
-        },
-        update: {
-          email: email_addresses[0].email_address,
-          image: image_url,
-          // Only update organization if provided in metadata during a re-creation/invite flow
-          ...(organizationId ? { organizationId } : {}),
-          // Update names if changed
-          ...(first_name ? { firstName: first_name } : {}),
-          ...(last_name ? { lastName: last_name } : {}),
-        },
-      });
-      console.log(`✅ User created/upserted: ${id} with role ${role}`);
-    } catch (error) {
-      console.error("❌ Error upserting user:", error);
-      return new Response("Error upserting user", { status: 500 });
-    }
-  }
-
-  if (eventType === "user.updated") {
-    const { id, email_addresses, image_url } = evt.data;
-
-    try {
-      await prisma.user.update({
-        where: { id: id },
-        data: {
-          email: email_addresses[0].email_address,
-          image: image_url,
-        },
-      });
-      console.log(`🔄 User updated: ${id}`);
-    } catch (error) {
-      console.error("❌ Error updating user:", error);
-      // Don't error out if user doesn't exist to avoid retry loops
-    }
-  }
-
-  if (eventType === "user.deleted") {
-    const { id } = evt.data;
-
-    if (!id) {
-      return new Response("No user ID found", { status: 400 });
-    }
-
-    try {
-      await prisma.user.delete({
-        where: { id: id },
-      });
-      console.log(`🗑️ User deleted: ${id}`);
-    } catch (error) {
-      console.error("❌ Error deleting user:", error);
-    }
-  }
-
-  // Manejar user.updated y user.deleted también...
-
-  return new Response("", { status: 200 });
 }

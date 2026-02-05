@@ -16,4 +16,6 @@ export type UpdateUserInput = Partial<CreateUserInput>;
 export interface UsersFilters {
   search?: string;
   sort?: string;
+  role?: string;
+  status?: string
 }

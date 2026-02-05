@@ -2,18 +2,20 @@
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Suspense } from "react";
 import { Member } from "@/server/domain/entities/Member";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
 import { MembersTable } from "./members-table";
 import Loading from "../loading";
-import Link from "next/link";
 import { PageableResponse } from "@/server/shared/common/pagination";
-import FiltersInput, { UiSortOption } from "@/components/ui/filters-input";
+import { FilterConfiguration } from "@/components/ui/filters-input";
 import { useParams } from "next/navigation";
+import SmartFilters from "@/components/ui/filters-input";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import Link from "next/link";
 
 interface MembersViewPageProps {
   paginatedMembers: PageableResponse<Member>;
@@ -32,66 +34,61 @@ export default function MembersViewPage({
   const params = useParams();
   const slug = params.slug as string;
 
-  const membersSortOptions: UiSortOption<Member>[] = [
-    {
-      label: "Nombres (A-Z)",
-      field: "firstName",
-      direction: "asc",
-      value: "firstName-asc",
-    },
-    {
-      label: "Nombres (Z-A)",
-      field: "firstName",
-      direction: "desc",
-      value: "firstName-desc",
-    },
-    {
-      label: "Apellido (A-Z)",
-      field: "lastName",
-      direction: "asc",
-      value: "lastName-asc",
-    },
-    {
-      label: "Apellido (Z-A)",
-      field: "lastName",
-      direction: "desc",
-      value: "lastName-desc",
-    }
-  ]
+  const filtersConfig: FilterConfiguration<Member> = {
+    sort: [
+      {
+        label: "Nombres (A-Z)",
+        field: "firstName",
+        value: "firstName-asc"
+      },
+      {
+        label: "Nombres (Z-A)",
+        field: "firstName",
+        value: "firstName-desc"
+      }
+    ],
 
+    filters: [
+      {
+        key: "status",
+        label: "Estado",
+        options: [
+          { label: "Activo", value: "active" },
+          { label: "Inactivo", value: "inactive" }
+        ]
+      }
+    ]
+  }
   return (
     <Suspense fallback={<Loading />}>
       <DashboardLayout
         breadcrumbs={[{ label: "Admin", href: `/${slug}/admin/dashboard` }, { label: "Miembros" }]}
       >
-        <div className="flex flex-col h-full space-y-4 overflow-hidden">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Gestión de Miembros
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Administra todos los miembros de tu gimnasio
-              </p>
-            </div>
+        <PageHeader
+          title="Gestión de Miembros"
+          description="Administra todos los miembros de tu gimnasio"
+          actions={
             <Link href={`/${slug}/admin/members/new`}>
-              <Button
-                size="sm"
-                className="gap-2 bg-primary hover:bg-primary/90"
-              >
+              <Button size="sm" className="gap-2">
                 <Plus className="w-4 h-4" />
                 Nuevo Miembro
               </Button>
             </Link>
-          </div>
+          }
+        />
+        <div className="flex flex-col h-full space-y-4 overflow-hidden">
 
-          {/* Stats */}
+
+          {/* ⚠️ ADVERTENCIA DE LÓGICA: 
+                         Estas estadísticas solo reflejan la página actual (ej. 10 usuarios), 
+                         NO el total de la base de datos. 
+                         Para hacerlo bien, el backend debería devolver un objeto 'stats' junto con la paginación.
+                     */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label: "Total Miembros", value: totalRecords.toString() },
-              { label: "Activos Este Mes", value: "892" },
-              { label: "Vencimientos Próximos", value: "24" },
+              { label: "En esta página", value: members.length.toString() },
+              // { label: "Admins", value: ??? } <- Necesitas dato del backend
             ].map((stat, index) => (
               <Card key={index} className="p-3">
                 <p className="text-xs text-muted-foreground mb-1">
@@ -104,14 +101,13 @@ export default function MembersViewPage({
             ))}
           </div>
 
-          {/* Filters */}
-
           <div className="flex flex-col sm:flex-row gap-2">
-            <SearchInput placeholder="Buscar por nombres, email, telefono..." />
-            <FiltersInput sortOptions={membersSortOptions} />
+            {/* SearchInput necesita Suspense boundary, pero como toda la pagina 
+                             esta envuelta, funcionará bien. */}
+            <SearchInput placeholder="Buscar por nombres, email..." />
+            <SmartFilters config={filtersConfig} />
           </div>
 
-          {/* Members Table Container */}
           <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
             <MembersTable members={members} />
             <div className="p-2 border-t bg-background">

@@ -48,35 +48,64 @@ export class UsersRepository
     filters: UsersFilters,
   ): Promise<[Prisma.UserWhereInput, Prisma.UserOrderByWithRelationInput]> {
     const ALLOWED_SORT_FIELDS = ["createdAt", "updatedAt", "firstName", "lastName", "email"];
+    const ALLOWED_ROLES = ["owner", "admin", "staff", "trainer"] as const;
+    const ALLOWED_STATUS = ["active", "inactive"] as const;
 
-    const WhereClause: Prisma.UserWhereInput = {}
+    const conditions: Prisma.UserWhereInput[] = [];
 
+    // Search filter
     if (filters.search) {
       const searchTerms = filters.search.trim().split(/\s+/).filter(Boolean);
 
       if (searchTerms.length > 0) {
-        WhereClause.AND = searchTerms.map((term) => ({
-          OR: [
-            { firstName: { contains: term, mode: "insensitive" } },
-            { lastName: { contains: term, mode: "insensitive" } },
-            { email: { contains: term, mode: "insensitive" } },
-            { role: { contains: term, mode: "insensitive" } }
-          ],
-        }));
+        searchTerms.forEach((term) => {
+          conditions.push({
+            OR: [
+              { firstName: { contains: term, mode: "insensitive" } },
+              { lastName: { contains: term, mode: "insensitive" } },
+              { email: { contains: term, mode: "insensitive" } },
+            ],
+          });
+        });
       }
     }
 
+    // Role filter
+    if (filters.role) {
+      const roleInput = filters.role.toLowerCase();
+      const isValidRole = (ALLOWED_ROLES as readonly string[]).includes(roleInput);
+
+      if (isValidRole) {
+        conditions.push({ role: { equals: roleInput.toUpperCase() as any } });
+      }
+    }
+
+    // Status filter
+    if (filters.status) {
+      const statusInput = filters.status.toLowerCase();
+      const isValidStatus = (ALLOWED_STATUS as readonly string[]).includes(statusInput);
+
+      if (isValidStatus) {
+        conditions.push({ isActive: statusInput === "active" });
+      }
+    }
+
+    const WhereClause: Prisma.UserWhereInput = conditions.length > 0 ? { AND: conditions } : {};
+
+    // Sort
     let OrderByClause: Prisma.UserOrderByWithRelationInput = { createdAt: "desc" };
 
     if (filters.sort) {
-      const [field, direction] = filters.sort.split("-")
-      const isValidField = (ALLOWED_SORT_FIELDS as readonly string[]).includes(field)
-      const isValidDirection = direction === "asc" || direction === "desc"
+      const [field, direction] = filters.sort.split("-");
+      const isValidField = (ALLOWED_SORT_FIELDS as readonly string[]).includes(field);
+      const isValidDirection = direction === "asc" || direction === "desc";
 
       if (isValidField && isValidDirection) {
-        OrderByClause = { [field]: direction as Prisma.SortOrder }
+        OrderByClause = { [field]: direction as Prisma.SortOrder };
       }
     }
+
     return [WhereClause, OrderByClause];
   }
+
 }

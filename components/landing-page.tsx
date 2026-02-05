@@ -2,72 +2,413 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Check, ArrowRight } from "lucide-react";
+import {
+    Check,
+    ArrowRight,
+    Users,
+    CreditCard,
+    BarChart3,
+    Shield,
+    Smartphone,
+    Zap,
+    Star,
+    ChevronRight,
+    Dumbbell,
+    Clock,
+    TrendingUp,
+} from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
 export function LandingPage({ dashboardUrl, isLoggedIn }: { dashboardUrl?: string, isLoggedIn?: boolean }) {
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="min-h-screen bg-background">
             {/* Navbar */}
-            <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="text-xl font-bold text-slate-900 dark:text-white">IziGym</div>
-                    <div className="flex gap-4 items-center">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-primary p-2 rounded-lg">
+                            <Dumbbell className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        <span className="text-xl font-bold">IziGym</span>
+                    </div>
+                    <nav className="hidden md:flex items-center gap-8">
+                        <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Características</a>
+                        <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Precios</a>
+                        <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Testimonios</a>
+                    </nav>
+                    <div className="flex gap-3 items-center">
                         {isLoggedIn ? (
                             <Link href={dashboardUrl || "/sign-in"}>
                                 <Button>Ir al Dashboard</Button>
                             </Link>
                         ) : (
-                            <Link href="/sign-in">
-                                <Button>Iniciar Sesión</Button>
-                            </Link>
+                            <>
+                                <Link href="/sign-in">
+                                    <Button variant="ghost">Iniciar Sesión</Button>
+                                </Link>
+                                <Link href="/sign-up">
+                                    <Button>Comenzar Gratis</Button>
+                                </Link>
+                            </>
                         )}
                         <ModeToggle />
                     </div>
                 </div>
             </header>
 
-            {/* Hero */}
-            <section className="py-24 text-center">
-                <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                    Gestiona tu gimnasio con <span className="text-blue-600 dark:text-blue-400">Poder</span>
-                </h1>
-                <p className="mt-6 text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                    La plataforma completa para dueños de gimnasios ambiciosos. Control de acceso, pagos, miembros y más.
-                </p>
-                <div className="mt-10 flex justify-center gap-4">
-                    <Link href={isLoggedIn ? (dashboardUrl || "/sign-in") : "/sign-up"}>
-                        <Button size="lg" className="w-full sm:w-auto">
-                            {isLoggedIn ? "Ir a mi Panel" : "Comenzar Prueba Gratis"}
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                    {!isLoggedIn && (
-                        <Link href="/pricing">
-                            <Button size="lg" variant="outline" className="h-12 px-8 text-lg dark:text-slate-200 dark:border-slate-700">
-                                Ver Planes
+            {/* Hero Section */}
+            <section className="relative overflow-hidden py-20 sm:py-32">
+                {/* Background Gradient */}
+                <div className="absolute inset-0 -z-10">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-linear-to-br from-primary/20 via-blue-500/10 to-transparent rounded-full blur-3xl" />
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-4xl mx-auto">
+                        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-6">
+                            <Zap className="h-4 w-4" />
+                            <span>Software #1 para gimnasios en Latinoamérica</span>
+                        </div>
+
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
+                            El sistema que tu gimnasio
+                            <span className="block mt-2 bg-linear-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
+                                necesita para crecer
+                            </span>
+                        </h1>
+
+                        <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+                            Automatiza cobros, gestiona miembros, controla accesos y analiza tu negocio.
+                            <strong className="text-foreground"> Todo en una sola plataforma.</strong>
+                        </p>
+
+                        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                            <Link href={isLoggedIn ? (dashboardUrl || "/sign-in") : "/sign-up"}>
+                                <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
+                                    {isLoggedIn ? "Ir a mi Panel" : "Prueba Gratis 14 Días"}
+                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                </Button>
+                            </Link>
+                            <Button size="lg" variant="outline" className="h-12 px-8 text-base">
+                                Ver Demo en Vivo
                             </Button>
-                        </Link>
-                    )}
+                        </div>
+
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            ✓ Sin tarjeta de crédito &nbsp; ✓ Configuración en 5 minutos &nbsp; ✓ Soporte 24/7
+                        </p>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="mt-20 grid grid-cols-2 sm:grid-cols-4 gap-8 max-w-3xl mx-auto">
+                        {[
+                            { value: "500+", label: "Gimnasios activos" },
+                            { value: "50K+", label: "Miembros gestionados" },
+                            { value: "99.9%", label: "Uptime garantizado" },
+                            { value: "$2M+", label: "Cobros procesados" },
+                        ].map((stat, i) => (
+                            <div key={i} className="text-center">
+                                <div className="text-3xl sm:text-4xl font-bold text-foreground">{stat.value}</div>
+                                <div className="mt-1 text-sm text-muted-foreground">{stat.label}</div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            {/* Features Preview */}
-            <section className="py-16 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
-                    {[
-                        { title: "Gestión de Miembros", desc: "Base de datos completa con historial y estado." },
-                        { title: "Pagos Automatizados", desc: "Integración con Stripe para cobros recurrentes." },
-                        { title: "Control de Acceso", desc: "Gestiona quién entra y quién sale en tiempo real." }
-                    ].map((f, i) => (
-                        <div key={i} className="p-6 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                            <Check className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-4" />
-                            <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">{f.title}</h3>
-                            <p className="text-slate-600 dark:text-slate-400">{f.desc}</p>
+            {/* Problem/Solution Section */}
+            <section className="py-20 bg-muted/30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl sm:text-4xl font-bold">
+                            ¿Te suena familiar?
+                        </h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        {/* Problems */}
+                        <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 sm:p-8">
+                            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">😫 Sin IziGym</h3>
+                            <ul className="space-y-3 text-muted-foreground">
+                                {[
+                                    "Cobros manuales que se olvidan",
+                                    "Excel infinitos para controlar miembros",
+                                    "No sabes quién pagó y quién no",
+                                    "Clientes que entran sin membresía activa",
+                                    "Cero visibilidad de tu negocio",
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3">
+                                        <span className="text-red-500">✗</span>
+                                        <span>{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                    ))}
+
+                        {/* Solutions */}
+                        <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-6 sm:p-8">
+                            <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-4">🚀 Con IziGym</h3>
+                            <ul className="space-y-3 text-muted-foreground">
+                                {[
+                                    "Cobros automáticos con Stripe",
+                                    "Dashboard unificado y en tiempo real",
+                                    "Alertas de membresías por vencer",
+                                    "Control de acceso inteligente",
+                                    "Reportes y métricas accionables",
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3">
+                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
+                                        <span>{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </section>
+
+            {/* Features Grid */}
+            <section id="features" className="py-20 sm:py-32">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl sm:text-4xl font-bold">
+                            Todo lo que necesitas,
+                            <span className="text-primary"> nada que no</span>
+                        </h2>
+                        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                            Herramientas diseñadas específicamente para gimnasios y centros de fitness
+                        </p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                            {
+                                icon: Users,
+                                title: "Gestión de Miembros",
+                                desc: "Base de datos completa con fotos, historial de pagos, fecha de vencimiento y estado activo.",
+                                color: "bg-blue-500/10 text-blue-500"
+                            },
+                            {
+                                icon: CreditCard,
+                                title: "Cobros Automáticos",
+                                desc: "Integración con Stripe para cobros recurrentes. Olvídate de perseguir pagos.",
+                                color: "bg-green-500/10 text-green-500"
+                            },
+                            {
+                                icon: Shield,
+                                title: "Control de Acceso",
+                                desc: "Valida membresías en tiempo real. QR, código o reconocimiento facial.",
+                                color: "bg-purple-500/10 text-purple-500"
+                            },
+                            {
+                                icon: BarChart3,
+                                title: "Reportes Inteligentes",
+                                desc: "Métricas de ingresos, retención, asistencia y crecimiento en un solo lugar.",
+                                color: "bg-orange-500/10 text-orange-500"
+                            },
+                            {
+                                icon: Smartphone,
+                                title: "App para Miembros",
+                                desc: "Tus clientes ven su membresía, pagos y horarios desde su celular.",
+                                color: "bg-pink-500/10 text-pink-500"
+                            },
+                            {
+                                icon: Clock,
+                                title: "Gestión de Clases",
+                                desc: "Horarios, reservas de cupos con límites y recordatorios automáticos.",
+                                color: "bg-cyan-500/10 text-cyan-500"
+                            },
+                        ].map((feature, i) => (
+                            <div
+                                key={i}
+                                className="group p-6 rounded-2xl border border-border bg-card hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+                            >
+                                <div className={`inline-flex p-3 rounded-xl ${feature.color}`}>
+                                    <feature.icon className="h-6 w-6" />
+                                </div>
+                                <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+                                <p className="mt-2 text-muted-foreground">{feature.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Testimonials */}
+            <section id="testimonials" className="py-20 bg-muted/30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl sm:text-4xl font-bold">
+                            Dueños de gimnasios confían en IziGym
+                        </h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            {
+                                quote: "Pasé de cobrar manualmente a 200 miembros en Excel, a tener todo automatizado. Recuperé 15 horas al mes.",
+                                name: "Carlos Mendoza",
+                                role: "Power Fitness Gym",
+                                rating: 5
+                            },
+                            {
+                                quote: "El control de acceso es increíble. Ya nadie entra sin pagar. Reduje la morosidad en un 40%.",
+                                name: "María González",
+                                role: "FitZone Bogotá",
+                                rating: 5
+                            },
+                            {
+                                quote: "Los reportes me ayudaron a identificar cuál plan vendía más. Ahora facturo 30% más por las decisiones basadas en datos.",
+                                name: "Roberto Silva",
+                                role: "Iron Temple CDMX",
+                                rating: 5
+                            },
+                        ].map((testimonial, i) => (
+                            <div
+                                key={i}
+                                className="p-6 rounded-2xl bg-card border border-border"
+                            >
+                                <div className="flex gap-1 mb-4">
+                                    {[...Array(testimonial.rating)].map((_, j) => (
+                                        <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                    ))}
+                                </div>
+                                <p className="text-muted-foreground italic">"{testimonial.quote}"</p>
+                                <div className="mt-6 flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary to-blue-500" />
+                                    <div>
+                                        <div className="font-semibold">{testimonial.name}</div>
+                                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Pricing */}
+            <section id="pricing" className="py-20 sm:py-32">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl sm:text-4xl font-bold">
+                            Precios simples, sin sorpresas
+                        </h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            Empieza gratis, escala cuando crezcas
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        {[
+                            {
+                                name: "Starter",
+                                price: "Gratis",
+                                desc: "Para gimnasios que recién comienzan",
+                                features: ["Hasta 50 miembros", "Gestión básica", "1 usuario admin", "Soporte por email"],
+                                cta: "Comenzar Gratis",
+                                popular: false
+                            },
+                            {
+                                name: "Pro",
+                                price: "$49",
+                                period: "/mes",
+                                desc: "Para gimnasios en crecimiento",
+                                features: ["Hasta 500 miembros", "Cobros automáticos", "Control de acceso", "Reportes avanzados", "5 usuarios admin", "Soporte prioritario"],
+                                cta: "Prueba 14 días gratis",
+                                popular: true
+                            },
+                            {
+                                name: "Enterprise",
+                                price: "Custom",
+                                desc: "Para cadenas de gimnasios",
+                                features: ["Miembros ilimitados", "Multi-sucursal", "API personalizada", "Onboarding dedicado", "SLA garantizado"],
+                                cta: "Contactar Ventas",
+                                popular: false
+                            },
+                        ].map((plan, i) => (
+                            <div
+                                key={i}
+                                className={`relative p-6 sm:p-8 rounded-2xl border ${plan.popular
+                                    ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                                    : "border-border bg-card"
+                                    }`}
+                            >
+                                {plan.popular && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                        <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                                            Más Popular
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="text-lg font-semibold">{plan.name}</div>
+                                <div className="mt-4">
+                                    <span className="text-4xl font-bold">{plan.price}</span>
+                                    {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
+                                </div>
+                                <p className="mt-2 text-sm text-muted-foreground">{plan.desc}</p>
+                                <ul className="mt-6 space-y-3">
+                                    {plan.features.map((feature, j) => (
+                                        <li key={j} className="flex items-center gap-3 text-sm">
+                                            <Check className="h-4 w-4 text-primary shrink-0" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Link href="/sign-up" className="block mt-8">
+                                    <Button
+                                        className="w-full"
+                                        variant={plan.popular ? "default" : "outline"}
+                                    >
+                                        {plan.cta}
+                                        <ChevronRight className="ml-1 h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Final CTA */}
+            <section className="py-20 sm:py-32">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="bg-linear-to-br from-primary/10 via-blue-500/10 to-purple-500/10 rounded-3xl p-8 sm:p-12 border border-primary/20">
+                        <TrendingUp className="h-12 w-12 text-primary mx-auto mb-6" />
+                        <h2 className="text-3xl sm:text-4xl font-bold">
+                            ¿Listo para hacer crecer tu gimnasio?
+                        </h2>
+                        <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+                            Únete a cientos de dueños de gimnasios que ya optimizaron sus operaciones con IziGym
+                        </p>
+                        <div className="mt-8">
+                            <Link href="/sign-up">
+                                <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/25">
+                                    Comenzar Prueba Gratis
+                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="py-12 border-t border-border">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-primary p-1.5 rounded-lg">
+                                <Dumbbell className="h-4 w-4 text-primary-foreground" />
+                            </div>
+                            <span className="font-semibold">IziGym</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                            © {new Date().getFullYear()} IziGym. Todos los derechos reservados.
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }

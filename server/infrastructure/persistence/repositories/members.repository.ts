@@ -17,28 +17,42 @@ export class MembersRepository
     MembersFilters
   >
   implements IMembersRepository {
+
   async buildPrismaClauses(
     filters: MembersFilters,
   ): Promise<[Prisma.MemberWhereInput, Prisma.MemberOrderByWithRelationInput]> {
     const ALLOWED_SORT_FIELDS = ["createdAt", "firstName", "lastName", "gender"] as const
+    const ALLOWED_STATUS = ["active", "inactive"]
 
-    // Where
-    const WhereClause: Prisma.MemberWhereInput = {}
+    const conditions: Prisma.MemberWhereInput[] = []
 
     if (filters.search) {
       const searchTerms = filters.search.trim().split(/\s+/).filter(Boolean);
 
       if (searchTerms.length > 0) {
-        WhereClause.AND = searchTerms.map((term) => ({
-          OR: [
-            { firstName: { contains: term, mode: "insensitive" } },
-            { lastName: { contains: term, mode: "insensitive" } },
-            { email: { contains: term, mode: "insensitive" } },
-            { phone: { contains: term, mode: "insensitive" } }
-          ],
-        }))
+        searchTerms.forEach((term) => {
+          conditions.push({
+            OR: [
+              { firstName: { contains: term, mode: "insensitive" } },
+              { lastName: { contains: term, mode: "insensitive" } },
+              { email: { contains: term, mode: "insensitive" } },
+              { phone: { contains: term, mode: "insensitive" } }
+            ],
+          })
+        })
       }
     }
+
+    if (filters.status) {
+      const statusInput = filters.status.toLowerCase()
+      const isValidStatus = (ALLOWED_STATUS as readonly string[]).includes(statusInput)
+
+      if (isValidStatus) {
+        conditions.push({ isActive: statusInput === "active" })
+      }
+    }
+
+    const WhereClause: Prisma.MemberWhereInput = conditions.length > 0 ? { AND: conditions } : {}
 
     // OrderBy
     let OrderByClause: Prisma.MemberOrderByWithRelationInput = { createdAt: "desc" }

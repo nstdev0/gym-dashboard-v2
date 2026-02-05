@@ -11,7 +11,8 @@ export const GET = createContext(
       limit: Number(searchParams.get("limit")) || 10,
       filters: {
         search: searchParams.get("search") || undefined,
-        sort: searchParams.get("sort") || undefined
+        sort: searchParams.get("sort") || undefined,
+        status: searchParams.get("status") || undefined
       },
     };
   },

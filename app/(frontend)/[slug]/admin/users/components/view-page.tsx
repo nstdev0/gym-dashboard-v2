@@ -2,30 +2,20 @@
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Suspense } from "react";
 import { User } from "@/server/domain/entities/User";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
 import { UsersTable } from "./users-table";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { ArrowUpDown } from "lucide-react";
-import {
-    useRouter,
-    useSearchParams,
-    usePathname,
-    useParams,
-} from "next/navigation";
-import Link from "next/link";
 import { PageableResponse } from "@/server/shared/common/pagination";
 import Loading from "../loading";
+import { FilterConfiguration } from "@/components/ui/filters-input";
+import { useParams } from "next/navigation";
+import SmartFilters from "@/components/ui/filters-input";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
 interface UsersViewPageProps {
     paginatedUsers: PageableResponse<User>;
@@ -41,68 +31,75 @@ export default function UsersViewPage({
         totalRecords,
     } = paginatedUsers;
 
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const pathname = usePathname();
     const params = useParams();
     const slug = params.slug as string;
 
-    const handleSortChange = (value: string) => {
-        const [sort, order] = value.split(":");
-        const params = new URLSearchParams(searchParams);
-        params.set("sort", sort);
-        params.set("order", order);
-        router.replace(`${pathname}?${params.toString()}`);
-    };
+    const filtersConfig: FilterConfiguration<User> = {
+        sort: [
+            {
+                label: "Nombres (A-Z)",
+                field: "firstName",
+                value: "firstName-asc"
+            },
+            {
+                label: "Nombres (Z-A)",
+                field: "firstName",
+                value: "firstName-desc"
+            }
+        ],
 
-    const handleRoleFilter = (value: string) => {
-        const params = new URLSearchParams(searchParams);
-        if (value === "ALL") {
-            params.delete("role");
-        } else {
-            params.set("role", value);
-        }
-        // Reset to page 1 when filtering
-        params.set("page", "1");
-        router.replace(`${pathname}?${params.toString()}`);
+        filters: [
+            {
+                key: "role",
+                label: "Rol",
+                options: [
+                    { label: "Propietario", value: "owner" },
+                    { label: "Administrador", value: "admin" },
+                    { label: "STAFF", value: "staff" },
+                    { label: "Entrenador", value: "trainer" }
+                ]
+            },
+            {
+                key: "status",
+                label: "Estado",
+                options: [
+                    { label: "Activo", value: "active" },
+                    { label: "Inactivo", value: "inactive" }
+                ]
+            }
+        ]
     }
-
-    const currentSort = `${searchParams.get("sort") || "createdAt"}:${searchParams.get("order") || "desc"}`;
-    const currentRole = searchParams.get("role") || "ALL";
 
     return (
         <Suspense fallback={<Loading />}>
             <DashboardLayout
-                breadcrumbs={[{ label: "Dashboard", href: `/${slug}/admin` }, { label: "Usuarios" }]}
+                breadcrumbs={[{ label: "Dashboard", href: `/${slug}/admin/dashboard` }, { label: "Usuarios" }]}
             >
-                <div className="flex flex-col h-full space-y-4 overflow-hidden">
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-foreground">
-                                Gestión de Usuarios
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                Administra los accesos y roles del sistema
-                            </p>
-                        </div>
+                <PageHeader
+                    title="Gestión de Usuarios"
+                    description="Administra los usuarios de tu gimnasio"
+                    actions={
                         <Link href={`/${slug}/admin/users/new`}>
-                            <Button
-                                size="sm"
-                                className="gap-2 bg-primary hover:bg-primary/90"
-                            >
+                            <Button size="sm" className="gap-2">
                                 <Plus className="w-4 h-4" />
                                 Nuevo Usuario
                             </Button>
                         </Link>
-                    </div>
+                    }
+                />
+                <div className="flex flex-col h-full space-y-4 overflow-hidden">
 
-                    {/* Stats */}
+
+                    {/* ⚠️ ADVERTENCIA DE LÓGICA: 
+                        Estas estadísticas solo reflejan la página actual (ej. 10 usuarios), 
+                        NO el total de la base de datos. 
+                        Para hacerlo bien, el backend debería devolver un objeto 'stats' junto con la paginación.
+                    */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
                             { label: "Total Usuarios", value: totalRecords.toString() },
-                            { label: "Activos", value: users.filter(u => u.isActive).length.toString() }, // Simple approximation
-                            { label: "Administradores", value: users.filter(u => u.role === "ADMIN").length.toString() },
+                            { label: "En esta página", value: users.length.toString() },
+                            // { label: "Admins", value: ??? } <- Necesitas dato del backend
                         ].map((stat, index) => (
                             <Card key={index} className="p-3">
                                 <p className="text-xs text-muted-foreground mb-1">
@@ -115,43 +112,13 @@ export default function UsersViewPage({
                         ))}
                     </div>
 
-                    {/* Filters */}
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <SearchInput placeholder="Buscar por email..." />
-
-                        {/* Filtro de Rol */}
-                        <Select value={currentRole} onValueChange={handleRoleFilter}>
-                            <SelectTrigger className="w-[180px] h-9">
-                                <SelectValue placeholder="Filtrar por rol" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">Todos los roles</SelectItem>
-                                <SelectItem value="ADMIN">Admin</SelectItem>
-                                <SelectItem value="STAFF">Staff</SelectItem>
-                                <SelectItem value="TRAINER">Trainer</SelectItem>
-                                <SelectItem value="OWNER">Owner</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center gap-2">
-                            <Select value={currentSort} onValueChange={handleSortChange}>
-                                <SelectTrigger className="w-[180px] h-9">
-                                    <div className="flex items-center gap-2">
-                                        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                                        <SelectValue placeholder="Ordenar por" />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="createdAt:desc">Más recientes</SelectItem>
-                                    <SelectItem value="createdAt:asc">Más antiguos</SelectItem>
-                                    <SelectItem value="email:asc">Email (A-Z)</SelectItem>
-                                    <SelectItem value="email:desc">Email (Z-A)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* SearchInput necesita Suspense boundary, pero como toda la pagina 
+                            esta envuelta, funcionará bien. */}
+                        <SearchInput placeholder="Buscar por nombres, email..." />
+                        <SmartFilters config={filtersConfig} />
                     </div>
 
-                    {/* Users Table Container */}
                     <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
                         <UsersTable users={users} />
                         <div className="p-2 border-t bg-background">
