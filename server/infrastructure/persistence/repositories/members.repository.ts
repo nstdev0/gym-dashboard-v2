@@ -7,6 +7,10 @@ import {
   CreateMemberInput,
   UpdateMemberInput,
 } from "@/server/domain/types/members";
+import {
+  PageableRequest,
+  PageableResponse,
+} from "@/server/shared/common/pagination";
 
 export class MembersRepository
   extends BaseRepository<
@@ -17,6 +21,64 @@ export class MembersRepository
     MembersFilters
   >
   implements IMembersRepository {
+
+  // Override findAll to include active membership with plan
+  async findAll(
+    request: PageableRequest<MembersFilters> = { page: 1, limit: 10 },
+  ): Promise<PageableResponse<Member>> {
+    const { page = 1, limit = 10, filters } = request;
+
+    const safePage = page < 1 ? 1 : page;
+    const skip = (safePage - 1) * limit;
+
+    let where: Prisma.MemberWhereInput = {};
+    let orderBy: Prisma.MemberOrderByWithRelationInput = { createdAt: "desc" };
+
+    if (filters) {
+      const [whereClause, orderByClause] = await this.buildPrismaClauses(filters);
+      where = whereClause;
+      orderBy = orderByClause;
+    }
+
+    if (this.organizationId) {
+      where = { ...where, organizationId: this.organizationId };
+    }
+
+    const [totalRecords, records] = await Promise.all([
+      this.model.count({ where }),
+      this.model.findMany({
+        skip,
+        take: limit,
+        where,
+        orderBy,
+        include: {
+          memberships: {
+            where: { status: "ACTIVE" },
+            take: 1,
+            orderBy: { endDate: "desc" },
+            include: {
+              plan: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    return {
+      currentPage: page,
+      pageSize: limit,
+      totalRecords,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
+      records: records as unknown as Member[],
+    };
+  }
+
 
   async buildPrismaClauses(
     filters: MembersFilters,
@@ -70,15 +132,17 @@ export class MembersRepository
   }
 
   async validateUnique(args: Partial<Member>): Promise<Member | null> {
-    // 1. Check Document Uniqueness
-    const docRecord = await this.findUnique({
-      docType_docNumber_organizationId: {
-        docType: args.docType,
-        docNumber: args.docNumber,
-        organizationId: this.organizationId as string,
-      },
-    } as unknown as Partial<Member>);
-    if (docRecord) return docRecord;
+    // 1. Check Document Uniqueness (only if both docType and docNumber are provided)
+    if (args.docType && args.docNumber) {
+      const docRecord = await this.findUnique({
+        docType_docNumber_organizationId: {
+          docType: args.docType,
+          docNumber: args.docNumber,
+          organizationId: this.organizationId as string,
+        },
+      } as unknown as Partial<Member>);
+      if (docRecord) return docRecord;
+    }
 
     // 2. Check Email Uniqueness (if provided and not empty)
     if (args.email && args.email.trim() !== "") {

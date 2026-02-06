@@ -2,12 +2,9 @@ import { IMembershipsRepository } from "@/server/application/repositories/member
 import { CreateMembershipInput } from "@/server/domain/types/memberships";
 import { Membership } from "@/server/domain/entities/Membership";
 import { ConflictError } from "@/server/domain/errors/common";
+import { ControllerExecutor } from "@/server/lib/api-handler";
 
-export interface ICreateMembershipUseCase {
-  execute(input: CreateMembershipInput): Promise<Membership>;
-}
-
-export class CreateMembershipUseCase implements ICreateMembershipUseCase {
+export class CreateMembershipUseCase implements ControllerExecutor<CreateMembershipInput, Membership> {
   constructor(private membershipsRepository: IMembershipsRepository) { }
 
   async execute(input: CreateMembershipInput): Promise<Membership> {
@@ -23,3 +20,5 @@ export class CreateMembershipUseCase implements ICreateMembershipUseCase {
     return this.membershipsRepository.create(input);
   }
 }
+
+export type ICreateMembershipUseCase = InstanceType<typeof CreateMembershipUseCase>

@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Member } from "@/server/domain/entities/Member";
-import { Users, Mail, Phone, Edit, Trash2, Eye } from "lucide-react";
+import { Users, Mail, Phone, Edit, Trash2, Eye, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -76,6 +76,35 @@ export const columns: ColumnDef<Member>[] = [
             </span>
           </div>
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: "plan",
+    header: "Plan",
+    cell: ({ row }) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const params = useParams();
+      const slug = params.slug as string;
+      const member = row.original as Member & {
+        memberships?: Array<{ plan?: { name: string } }>;
+      };
+      const activePlan = member.memberships?.[0]?.plan?.name;
+
+      if (activePlan) {
+        return (
+          <div className="text-foreground font-medium">{activePlan}</div>
+        );
+      }
+
+      return (
+        <Link
+          href={`/${slug}/admin/memberships/new?memberId=${member.id}`}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+        >
+          <span>Sin plan</span>
+          <PlusCircle className="w-4 h-4" />
+        </Link>
       );
     },
   },

@@ -8,15 +8,16 @@ export class UpdateMemberUseCase {
   constructor(private readonly repository: IMembersRepository) { }
 
   async execute(id: string, data: UpdateMemberInput): Promise<Member> {
-    const errors: string[] = [];
+    // Only validate email uniqueness for updates (docType/docNumber are immutable)
+    if (data.email) {
+      const existingWithEmail = await this.repository.validateUnique({
+        email: data.email,
+      });
 
-    const validateUnique = await this.repository.validateUnique(data);
-
-    if (validateUnique) errors.push("Email or Document number already exists");
-
-    if (errors.length > 0) {
-      const msg = errors.join(" and ");
-      throw new ConflictError(`${msg}`);
+      // If found and it's not the same member, it's a conflict
+      if (existingWithEmail && existingWithEmail.id !== id) {
+        throw new ConflictError("Email already exists");
+      }
     }
 
     // 1. Fetch current member to get missing height/weight if needed

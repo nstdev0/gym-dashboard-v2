@@ -3,7 +3,17 @@ import CapitalizeText from "./capitalize-text";
 import { DocType, Gender } from "@/server/domain/entities/Member";
 
 // --- HELPERS ---
-const optionalNumber = z.preprocess(
+const optionalHeight = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.coerce.number().min(50, "La altura debe ser mayor a 50 cm").max(300, "La altura debe ser menor a 300 cm").optional()
+);
+
+const optionalWeight = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.coerce.number().min(20, "El peso debe ser mayor a 20 kg").max(500, "El peso debe ser menor a 500 kg").optional()
+);
+
+const optionalImc = z.preprocess(
   (val) => (val === "" ? undefined : val),
   z.coerce.number().min(0).optional()
 );
@@ -11,7 +21,7 @@ const optionalNumber = z.preprocess(
 // Helper para campos opcionales que deben ser null si están vacíos (evita constraint unique en "")
 const optionalEmail = z.preprocess(
   (val) => (val === "" || val === null || val === undefined ? null : val),
-  z.string().email("Email inválido").nullable().optional()
+  z.string().email("Email inválido").toLowerCase().nullable().optional()
 );
 
 const optionalPhone = z.preprocess(
@@ -29,12 +39,14 @@ const optionalUrl = z.preprocess(
 const MemberBaseSchema = z.object({
   firstName: z
     .string()
+    .min(1, "Debes ingresar al menos un nombre")
     .min(2, "El nombre es muy corto")
     .trim()
     .transform((value) => CapitalizeText(value)),
 
   lastName: z
     .string()
+    .min(1, "Debes ingresar al menos un apellido")
     .min(2, "El apellido es muy corto")
     .trim()
     .transform((value) => CapitalizeText(value)),
@@ -43,17 +55,29 @@ const MemberBaseSchema = z.object({
 
   docNumber: z
     .string()
-    .regex(/^\d+$/, "Solo se permiten números")
+    .min(1, "Debes ingresar un número de documento")
     .trim(),
 
   email: optionalEmail,
   phone: optionalPhone,
 
-  birthDate: z.coerce.date().optional(),
+  birthDate: z.coerce.date()
+    .min(new Date("1900-01-01"), "Fecha inválida (muy antigua)")
+    .max(new Date(), "La fecha no puede ser futura") // Nadie nace mañana
+    .optional()
+    // Opcional: Validación de edad mínima (ej: 10 años)
+    .refine((date) => {
+      if (!date) return true; // Si es opcional y viene vacío, pasa
+      const ageDifMs = Date.now() - date.getTime();
+      const ageDate = new Date(ageDifMs);
+      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+      return age >= 5; // Mínimo 5 años de edad
+    }, { message: "El miembro debe tener al menos 5 años" }),
+
   gender: z.nativeEnum(Gender, { message: "Género inválido" }).optional(),
-  height: optionalNumber,
-  weight: optionalNumber,
-  imc: optionalNumber,
+  height: optionalHeight,
+  weight: optionalWeight,
+  imc: optionalImc,
   image: optionalUrl,
   isActive: z.boolean().default(true),
 });

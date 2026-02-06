@@ -90,8 +90,8 @@ model Member {
   image          String?
   imc            Float?
   weight         Float?
-  organization   Organization @relation(fields: [organizationId], references: [id])
   memberships    Membership[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([docType, docNumber, organizationId])
   @@unique([email, organizationId])

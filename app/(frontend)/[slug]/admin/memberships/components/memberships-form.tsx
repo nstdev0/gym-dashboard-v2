@@ -21,40 +21,20 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembershipStatus } from "@/server/domain/entities/Membership";
 import { MemberCombobox } from "./member-combobox";
-
-const membershipFormSchema = z.object({
-    memberId: z.string().min(1, "Miembro requerido"),
-    planId: z.string().min(1, "Plan requerido"),
-    startDate: z.string().min(1, "Fecha de inicio requerida"),
-    pricePaid: z.coerce.number().min(0, "El precio no puede ser negativo"),
-    status: z.nativeEnum(MembershipStatus).default(MembershipStatus.PENDING),
-});
-
-type MembershipFormValues = z.infer<typeof membershipFormSchema>;
-
-interface Member {
-    id: string;
-    firstName: string;
-    lastName: string;
-}
-
-interface Plan {
-    id: string;
-    name: string;
-    price: number;
-    durationDays: number;
-}
+import { createMembershipSchema } from "@/server/application/dtos/memberships.dto";
+import { Member } from "@/server/domain/entities/Member";
+import { Plan } from "@/server/domain/entities/Plan";
 
 interface MembershipFormProps {
     initialData?: {
         id: string;
         memberId: string;
         planId: string;
-        startDate: Date;
-        endDate: Date;
+        startDate: Date | string; // Flexibilidad por si viene string o date
+        endDate: Date | string;
         pricePaid: number;
         status: string;
-        member?: { firstName: string; lastName: string };
+        member?: Member;
     };
     isEdit?: boolean;
     redirectUrl: string;
@@ -69,19 +49,19 @@ export default function MembershipForm({
 }: MembershipFormProps) {
     const router = useRouter();
 
-    // Initial member for edit mode
-    const initialMember: Member | undefined = initialData?.member
-        ? { id: initialData.memberId, firstName: initialData.member.firstName, lastName: initialData.member.lastName }
-        : undefined;
+    const initialMember = initialData?.member ? initialData.member : undefined;
 
-    const form = useForm<MembershipFormValues>({
-        resolver: zodResolver(membershipFormSchema),
+    const form = useForm<z.infer<typeof createMembershipSchema>>({
+        resolver: zodResolver(createMembershipSchema),
         defaultValues: {
             memberId: initialData?.memberId || "",
             planId: initialData?.planId || "",
             startDate: initialData?.startDate
-                ? new Date(initialData.startDate).toISOString().split("T")[0]
-                : new Date().toISOString().split("T")[0],
+                ? new Date(initialData.startDate)
+                : undefined,
+            endDate: initialData?.endDate
+                ? new Date(initialData.endDate)
+                : undefined,
             pricePaid: initialData?.pricePaid || 0,
             status: (initialData?.status as MembershipStatus) || MembershipStatus.PENDING,
         },
@@ -90,9 +70,8 @@ export default function MembershipForm({
     const selectedPlanId = form.watch("planId");
     const selectedPlan = plans?.find((p) => p.id === selectedPlanId);
 
-    // Auto-fill price when plan changes
-    const handlePlanChange = (planId: string) => {
-        form.setValue("planId", planId);
+    // Actualiza solo el precio, no el ID (el ID ya lo maneja el field.onChange)
+    const updatePriceFromPlan = (planId: string) => {
         const plan = plans?.find((p) => p.id === planId);
         if (plan && !isEdit) {
             form.setValue("pricePaid", plan.price);
@@ -100,18 +79,19 @@ export default function MembershipForm({
     };
 
     const { mutate: mutateMembership, isPending } = useMutation({
-        mutationFn: async (values: MembershipFormValues) => {
-            // Calculate endDate based on plan duration
+        mutationFn: async (values: z.infer<typeof createMembershipSchema>) => {
             const plan = plans?.find((p) => p.id === values.planId);
+            // CORRECCIÓN FECHAS 2: Asegurar que trabajamos con objetos Date al enviar
             const startDate = new Date(values.startDate);
             const endDate = new Date(startDate);
+
             if (plan) {
                 endDate.setDate(endDate.getDate() + plan.durationDays);
             }
 
             const payload = {
                 ...values,
-                startDate: new Date(values.startDate),
+                startDate: startDate,
                 endDate: endDate,
             };
 
@@ -121,38 +101,32 @@ export default function MembershipForm({
             return api.post("/api/memberships", payload);
         },
         onSuccess: () => {
-            toast.success(
-                isEdit ? "Membresía actualizada correctamente" : "Membresía creada con éxito"
-            );
+            toast.success(isEdit ? "Membresía actualizada" : "Membresía creada");
             router.refresh();
             router.push(redirectUrl);
         },
         onError: (error) => {
             if (error instanceof ApiError && error.code === "VALIDATION_ERROR" && error.errors) {
                 Object.entries(error.errors).forEach(([field, messages]) => {
-                    form.setError(field as keyof MembershipFormValues, {
+                    form.setError(field as keyof z.infer<typeof createMembershipSchema>, {
                         type: "server",
                         message: messages[0],
                     }, { shouldFocus: true });
                 });
-                toast.error("Revisa los errores marcados en rojo.");
+                toast.error("Revisa los errores marcados.");
             } else {
                 toast.error(error.message || "Error al guardar");
             }
         },
     });
 
-    const onSubmit = (values: MembershipFormValues) => {
-        mutateMembership(values);
-    };
-
     return (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit((data) => mutateMembership(data))} className="space-y-8">
             <Card>
-                <CardHeader>
-                    <CardTitle>Información de la Membresía</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Información de la Membresía</CardTitle></CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-2">
+
+                    {/* MIEMBRO */}
                     <Controller
                         name="memberId"
                         control={form.control}
@@ -172,6 +146,7 @@ export default function MembershipForm({
                         )}
                     />
 
+                    {/* PLAN - TRUNCATE CORREGIDO */}
                     <Controller
                         name="planId"
                         control={form.control}
@@ -179,15 +154,28 @@ export default function MembershipForm({
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel required>Plan</FieldLabel>
                                 <Select
-                                    onValueChange={handlePlanChange}
+                                    onValueChange={(val) => {
+                                        field.onChange(val); // 1. Registrar cambio
+                                        updatePriceFromPlan(val); // 2. Actualizar precio
+                                    }}
                                     value={field.value}
                                 >
-                                    <SelectTrigger aria-invalid={fieldState.invalid}>
-                                        <SelectValue placeholder="Selecciona un plan" />
+                                    <SelectTrigger aria-invalid={fieldState.invalid} className="w-full">
+                                        {/* SOLUCIÓN TRUNCATE: 
+                                            Usamos 'span' con 'block' y 'truncate'. 
+                                            Esto suele comportarse mejor dentro de botones que un div flex.
+                                        */}
+                                        <span className="block truncate text-left w-full">
+                                            <SelectValue placeholder="Selecciona un plan" />
+                                        </span>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {plans?.map((plan) => (
-                                            <SelectItem key={plan.id} value={plan.id}>
+                                            <SelectItem
+                                                key={plan.id}
+                                                value={plan.id}
+                                                className="whitespace-normal break-words" // Permitir multilínea en el menú
+                                            >
                                                 {plan.name} - S/ {plan.price} ({plan.durationDays} días)
                                             </SelectItem>
                                         ))}
@@ -200,6 +188,7 @@ export default function MembershipForm({
                         )}
                     />
 
+                    {/* FECHA INICIO - CORREGIDO */}
                     <Controller
                         name="startDate"
                         control={form.control}
@@ -209,6 +198,10 @@ export default function MembershipForm({
                                 <Input
                                     type="date"
                                     {...field}
+                                    // z.coerce.date() maneja la conversión de string a Date
+                                    value={field.value instanceof Date
+                                        ? field.value.toISOString().split("T")[0]
+                                        : (field.value ? String(field.value) : "")}
                                     aria-invalid={fieldState.invalid}
                                 />
                                 {fieldState.invalid && fieldState.error && (
@@ -218,6 +211,7 @@ export default function MembershipForm({
                         )}
                     />
 
+                    {/* PRECIO PAGADO */}
                     <Controller
                         name="pricePaid"
                         control={form.control}
@@ -228,9 +222,10 @@ export default function MembershipForm({
                                     type="number"
                                     min={0}
                                     step="0.01"
-                                    aria-invalid={fieldState.invalid}
-                                    placeholder="0"
                                     {...field}
+                                    value={field.value ?? ""}
+                                    aria-invalid={fieldState.invalid}
+                                    placeholder="0.00"
                                 />
                                 {fieldState.invalid && fieldState.error && (
                                     <FieldError errors={[fieldState.error]} />
@@ -239,24 +234,22 @@ export default function MembershipForm({
                         )}
                     />
 
+                    {/* ESTADO */}
                     <Controller
                         name="status"
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel>Estado</FieldLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    value={field.value}
-                                >
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger aria-invalid={fieldState.invalid}>
                                         <SelectValue placeholder="Selecciona" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="PENDING">Pendiente</SelectItem>
-                                        <SelectItem value="ACTIVE">Activa</SelectItem>
-                                        <SelectItem value="EXPIRED">Vencida</SelectItem>
-                                        <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                                        <SelectItem value={MembershipStatus.PENDING}>Pendiente</SelectItem>
+                                        <SelectItem value={MembershipStatus.ACTIVE}>Activa</SelectItem>
+                                        <SelectItem value={MembershipStatus.EXPIRED}>Vencida</SelectItem>
+                                        <SelectItem value={MembershipStatus.CANCELLED}>Cancelada</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {fieldState.invalid && fieldState.error && (
@@ -267,7 +260,7 @@ export default function MembershipForm({
                     />
 
                     {selectedPlan && (
-                        <div className="md:col-span-2 p-4 bg-muted rounded-lg">
+                        <div className="md:col-span-2 p-4 bg-muted/50 rounded-lg border border-border">
                             <p className="text-sm text-muted-foreground">
                                 <strong>Plan seleccionado:</strong> {selectedPlan.name} -
                                 Duración: {selectedPlan.durationDays} días
@@ -278,20 +271,11 @@ export default function MembershipForm({
             </Card>
 
             <div className="flex justify-end gap-4 pt-4 border-t">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.back()}
-                    disabled={isPending}
-                >
+                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
                     Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                    {isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                    )}
+                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     {isEdit ? "Guardar Cambios" : "Crear Membresía"}
                 </Button>
             </div>

@@ -98,6 +98,31 @@ export default function MemberForm({
     console.log("RHF bloqueo el envio. Errores detectados: ", errors);
   };
 
+  const selectedDocType = form.watch("docType");
+
+  const getMaxLength = (type: string) => {
+    switch (type) {
+      case "DNI": return 8;      // DNI es exacto 8
+      case "RUC": return 11;     // RUC es exacto 11
+      case "CE": return 8;      // CE suele ser hasta 8
+      case "PASSPORT": return 12; // Pasaporte varía, 12 es seguro
+      default: return 15;
+    }
+  };
+
+  const getDocNumberPlaceholder = (type: string) => {
+    switch (type) {
+      case "DNI": return "12345678";
+      case "RUC": return "10123456789";
+      case "CE": return "E1234567";
+      case "PASSPORT": return "PE123456";
+      default: return "";
+    }
+  };
+
+  const currentMaxLength = getMaxLength(selectedDocType);
+  const currentDocNumberPlaceholder = getDocNumberPlaceholder(selectedDocType);
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
 
@@ -132,7 +157,7 @@ export default function MemberForm({
                 <Input
                   {...field}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Juan"
+                  placeholder="Jon"
                 />
                 {fieldState.invalid && fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
@@ -149,7 +174,7 @@ export default function MemberForm({
                 <Input
                   {...field}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Pérez"
+                  placeholder="Doe"
                 />
                 {fieldState.invalid && fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
@@ -165,13 +190,17 @@ export default function MemberForm({
                 <FieldLabel>Fecha Nacimiento</FieldLabel>
                 <Input
                   type="date"
+                  max={new Date().toISOString().split("T")[0]}
                   aria-invalid={fieldState.invalid}
-                  value={field.value instanceof Date ? field.value.toISOString().split("T")[0] : ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    field.onChange(val ? new Date(`${val}T12:00:00`) : undefined);
-                  }}
+
+                  // 1. Simplificación: Pasamos las props de react-hook-form directo
+                  // El input date nativo trabaja con strings "YYYY-MM-DD", ¡démosle eso!
+                  {...field}
+
+                  // 2. Manejo de nulos: Si es undefined/null, pon string vacío
+                  value={field.value ? String(field.value) : ""}
                 />
+
                 {fieldState.invalid && fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
                 )}
@@ -195,7 +224,7 @@ export default function MemberForm({
                   {...field}
                   value={field.value ?? ""}
                   aria-invalid={fieldState.invalid}
-                  placeholder="juan@ejemplo.com"
+                  placeholder="jon@example.com"
                 />
                 {fieldState.invalid && fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
@@ -267,8 +296,9 @@ export default function MemberForm({
                 <FieldLabel required>Número de Documento</FieldLabel>
                 <Input
                   {...field}
+                  maxLength={currentMaxLength}
                   aria-invalid={fieldState.invalid}
-                  placeholder="12345678"
+                  placeholder={currentDocNumberPlaceholder}
                   disabled={isEdit}
                   onChange={(e) => {
                     field.onChange(e);
@@ -303,7 +333,6 @@ export default function MemberForm({
                   <SelectContent>
                     <SelectItem value="MALE">Masculino</SelectItem>
                     <SelectItem value="FEMALE">Femenino</SelectItem>
-                    <SelectItem value="OTHER">Otro</SelectItem>
                   </SelectContent>
                 </Select>
                 {fieldState.invalid && fieldState.error && (
@@ -319,6 +348,7 @@ export default function MemberForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Altura (cm)</FieldLabel>
                 <Input
+                  maxLength={3}
                   type="number"
                   aria-invalid={fieldState.invalid}
                   placeholder="175"
@@ -339,12 +369,18 @@ export default function MemberForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Peso (kg)</FieldLabel>
                 <Input
+                  {...field}
+                  maxLength={5}
                   type="number"
                   step="0.1"
                   aria-invalid={fieldState.invalid}
                   placeholder="70.5"
-                  {...field}
                   value={field.value ?? ""}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      field.onChange(e.target.value);
+                    }
+                  }}
                 />
                 {fieldState.invalid && fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
