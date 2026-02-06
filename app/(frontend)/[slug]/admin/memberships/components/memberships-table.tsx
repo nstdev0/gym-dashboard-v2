@@ -44,13 +44,19 @@ export function MembershipsTable({ memberships, slug }: MembershipsTableProps) {
     });
 
     return (
-        <div className="rounded-md border overflow-hidden">
+        <div className="flex-1 overflow-auto relative">
             <Table>
-                <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                <TableHeader className="sticky top-0 z-10 bg-secondary/90 backdrop-blur-sm">
                     {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
+                        <TableRow
+                            key={headerGroup.id}
+                            className="border-b border-border hover:bg-transparent"
+                        >
                             {headerGroup.headers.map((header) => (
-                                <TableHead key={header.id} className="font-semibold">
+                                <TableHead
+                                    key={header.id}
+                                    className="px-4 py-3 font-semibold text-foreground uppercase text-xs"
+                                >
                                     {header.isPlaceholder
                                         ? null
                                         : flexRender(
@@ -67,7 +73,7 @@ export function MembershipsTable({ memberships, slug }: MembershipsTableProps) {
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
-                                className="hover:bg-muted/50 transition-colors"
+                                className="hover:bg-secondary/30 transition-colors border-b border-border"
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id} className="py-3 px-4">

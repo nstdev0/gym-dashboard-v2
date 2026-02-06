@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 interface Props {
-    searchParams: Promise<{ page?: string; limit?: string; search?: string; status?: string }>;
+    searchParams: Promise<{ page?: string; limit?: string; search?: string; status?: string; sort?: string }>;
 }
 
 export default async function MembershipsPage({ searchParams }: Props) {
@@ -18,11 +18,12 @@ export default async function MembershipsPage({ searchParams }: Props) {
     const container = await getContainer();
 
     const request = {
-        page: parseInt(params.page || "1"),
-        limit: parseInt(params.limit || "10"),
+        page: Number(params.page) || 1,
+        limit: Number(params.limit) || 10,
         filters: {
             search: params.search || undefined,
             status: params.status || undefined,
+            sort: params.sort || undefined,
         },
     };
 

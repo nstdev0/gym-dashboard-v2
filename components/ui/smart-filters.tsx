@@ -45,16 +45,16 @@ export default function SmartFilters<T>({
     const updateUrl = useCallback((key: string, value: string | null) => {
         const params = new URLSearchParams(searchParams.toString())
 
-        if (value && value !== "all") { // Si no es nulo y no es "all"
+        if (value && value !== "all" && value !== defaultSort) { // Si tiene valor, no es "all" y no es el defaultSort
             params.set(key, value)
         } else {
-            params.delete(key) // Si es "all" o null, borramos de la URL
+            params.delete(key) // Si es "all", null o defaultSort, lo quitamos para limpiar la URL
         }
 
         if (key !== "page") params.delete("page")
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
 
-    }, [searchParams, pathname, router])
+    }, [searchParams, pathname, router, defaultSort])
 
     const clearAll = () => router.push(pathname)
     const hasActiveFilters = searchParams.toString().length > 0;
@@ -68,7 +68,7 @@ export default function SmartFilters<T>({
                     value={searchParams.get("sort") || defaultSort}
                     onValueChange={(val) => updateUrl("sort", val)}
                 >
-                    <SelectTrigger className="w-[180px] h-9">
+                    <SelectTrigger className="w-auto min-w-[140px] h-9">
                         <div className="flex items-center gap-2">
                             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                             <SelectValue placeholder="Ordenar" />
@@ -97,7 +97,7 @@ export default function SmartFilters<T>({
                         value={currentValue}
                         onValueChange={(val) => updateUrl(filterConfig.key, val)}
                     >
-                        <SelectTrigger className="w-[160px] h-9 border-dashed">
+                        <SelectTrigger className="w-auto min-w-[140px] h-9 border-dashed">
                             <div className="flex items-center gap-2">
                                 <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                                 {/* SelectValue mostrará automáticamente el label de la opción seleccionada */}

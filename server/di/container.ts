@@ -7,7 +7,7 @@ import { OrganizationsRepository } from "../infrastructure/persistence/repositor
 import { GetAllOrganizationsUseCase } from "../application/use-cases/organizations/get-all-organizations.use-case";
 import { CreateOrganizationUseCase } from "../application/use-cases/organizations/create-organization.use-case";
 import { GetAllOrganizationsController } from "../interface-adapters/controllers/organizations/get-all-organizations.controller";
-import { CreateOrganizationsController } from "../interface-adapters/controllers/organizations/create-organization.controller";
+import { CreateOrganizationController } from "../interface-adapters/controllers/organizations/create-organization.controller";
 import { GetOrganizationByIdUseCase } from "@/server/application/use-cases/organizations/get-organization-by-id.use-case";
 import { UpdateOrganizationUseCase } from "@/server/application/use-cases/organizations/update-organization.use-case";
 import { DeleteOrganizationUseCase } from "@/server/application/use-cases/organizations/delete-organization.use-case";
@@ -108,7 +108,7 @@ export const getContainer = cache(async () => {
   const getAllOrganizationsController = new GetAllOrganizationsController(
     getAllOrganizationsUseCase,
   );
-  const createOrganizationController = new CreateOrganizationsController(
+  const createOrganizationController = new CreateOrganizationController(
     createOrganizationUseCase,
   );
   const getOrganizationByIdController = new GetOrganizationByIdController(

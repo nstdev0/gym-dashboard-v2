@@ -80,7 +80,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider>
+          <ClerkProvider
+            signInFallbackRedirectUrl="/"
+            signUpFallbackRedirectUrl="/"
+          >
             <ReactQueryProvider>
               <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
               {children}

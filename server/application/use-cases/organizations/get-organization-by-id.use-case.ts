@@ -2,9 +2,12 @@ import { IOrganizationRepository } from "@/server/application/repositories/organ
 import { Organization } from "@/server/domain/entities/Organization";
 
 export class GetOrganizationByIdUseCase {
-  constructor(private readonly repository: IOrganizationRepository) {}
+  constructor(private readonly repository: IOrganizationRepository) { }
 
   async execute(id: string): Promise<Organization | null> {
     return this.repository.findUnique({ id });
   }
 }
+
+export type IGetOrganizationByIdUseCase = InstanceType<typeof GetOrganizationByIdUseCase>;
+

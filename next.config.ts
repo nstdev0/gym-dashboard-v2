@@ -23,6 +23,14 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "1nur9kntg1.ufs.sh",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com"
       }
     ],
   },

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { PlansTable } from "./plans-table";
+import SmartFilters, { FilterConfiguration } from "@/components/ui/smart-filters";
 
 interface PlansViewPageProps {
     paginatedPlans: PageableResponse<Plan>;
@@ -29,6 +30,26 @@ export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
 
     const params = useParams();
     const slug = params.slug as string;
+
+    const filtersConfig: FilterConfiguration<Plan> = {
+        sort: [
+            { label: "Precio (Mayor a Menor)", field: "price", value: "price-desc" },
+            { label: "Precio (Menor a Mayor)", field: "price", value: "price-asc" },
+            { label: "Duración (Mayor a Menor)", field: "durationDays", value: "durationDays-desc" },
+            { label: "Duración (Menor a Mayor)", field: "durationDays", value: "durationDays-asc" },
+            { label: "Nombre (A-Z)", field: "name", value: "name-asc" },
+        ],
+        filters: [
+            {
+                key: "status",
+                label: "Estado",
+                options: [
+                    { label: "Activo", value: "active" },
+                    { label: "Inactivo", value: "inactive" },
+                ],
+            },
+        ],
+    };
 
     return (
         <Suspense fallback={<Loading />}>
@@ -70,6 +91,7 @@ export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
 
                     <div className="flex flex-col sm:flex-row gap-2">
                         <SearchInput placeholder="Buscar por nombre..." />
+                        <SmartFilters config={filtersConfig} />
                     </div>
 
                     <Card className="flex-1 overflow-hidden flex flex-col min-h-0">

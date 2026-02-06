@@ -2,9 +2,12 @@ import { IOrganizationRepository } from "@/server/application/repositories/organ
 import { Organization } from "@/server/domain/entities/Organization";
 
 export class DeleteOrganizationUseCase {
-  constructor(private readonly repository: IOrganizationRepository) {}
+  constructor(private readonly repository: IOrganizationRepository) { }
 
   async execute(id: string): Promise<Organization> {
     return this.repository.delete(id);
   }
 }
+
+export type IDeleteOrganizationUseCase = InstanceType<typeof DeleteOrganizationUseCase>;
+

@@ -3,7 +3,7 @@ import { Organization } from "@/server/domain/entities/Organization";
 import { UpdateOrganizationInput } from "@/server/domain/types/organizations";
 
 export class UpdateOrganizationUseCase {
-  constructor(private readonly repository: IOrganizationRepository) {}
+  constructor(private readonly repository: IOrganizationRepository) { }
 
   async execute(
     id: string,
@@ -12,3 +12,6 @@ export class UpdateOrganizationUseCase {
     return this.repository.update(id, data);
   }
 }
+
+export type IUpdateOrganizationUseCase = InstanceType<typeof UpdateOrganizationUseCase>;
+

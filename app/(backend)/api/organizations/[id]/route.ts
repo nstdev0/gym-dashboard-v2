@@ -1,32 +1,18 @@
+import { UpdateOrganizationSchema } from "@/server/application/dtos/organizations.dto";
 import { createContext } from "@/server/lib/api-handler";
 
 export const GET = createContext(
-  (container) => container.getOrganizationByIdController,
-  async (req, params) => {
-    const p = await params;
-    const id = Array.isArray(p?.id) ? p?.id[0] : p?.id;
-    if (!id) throw new Error("ID requerido");
-    return id;
-  },
+  (c) => c.getOrganizationByIdController
 );
 
 export const PATCH = createContext(
-  (container) => container.updateOrganizationController,
-  async (req, params) => {
-    const p = params;
-    const id = Array.isArray(p?.id) ? p?.id[0] : p?.id;
-    if (!id) throw new Error("ID requerido");
+  (c) => c.updateOrganizationController,
+  async (req) => {
     const body = await req.json();
-    return { id, data: body };
-  },
+    return UpdateOrganizationSchema.parse(body);
+  }
 );
 
 export const DELETE = createContext(
-  (container) => container.deleteOrganizationController,
-  async (req, params) => {
-    const p = params;
-    const id = (Array.isArray(p?.id) ? p?.id[0] : p?.id) as string;
-    if (!id) throw new Error("ID requerido");
-    return id;
-  },
+  (c) => c.deleteOrganizationController
 );

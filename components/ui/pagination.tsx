@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -18,25 +19,25 @@ export function Pagination({
   currentPage: number;
   totalPages: number;
 }) {
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const pathname = usePathname();
-  const { replace } = useRouter();
+  const searchParams = useSearchParams();
 
-  const createPageURL = (pageNumber: number | string) => {
-    const params = new URLSearchParams(searchParams);
+  const createPageURL = useCallback((pageNumber: number | string) => {
+    const params = new URLSearchParams(searchParams.toString());
     params.set("page", pageNumber.toString());
     return `${pathname}?${params.toString()}`;
-  };
+  }, [searchParams, pathname]);
 
   const goToPage = (page: number) => {
-    replace(createPageURL(page));
+    router.replace(createPageURL(page));
   };
 
   const handlePageSizeChange = (value: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set("limit", value);
     params.set("page", "1"); // Reset to page 1 on limit change
-    replace(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const currentLimit = searchParams.get("limit") || "10";

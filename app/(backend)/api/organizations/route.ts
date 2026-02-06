@@ -1,22 +1,36 @@
+import { createOrganizationSchema } from "@/server/application/dtos/organizations.dto";
 import { OrganizationsFilters } from "@/server/application/repositories/organizations.repository.interface";
 import { createContext } from "@/server/lib/api-handler";
 import { PageableRequest } from "@/server/shared/common/pagination";
+import { parsePagination } from "@/server/shared/utils/pagination-parser";
+import { auth } from "@clerk/nextjs/server";
 
 export const GET = createContext(
-  (container) => container.getAllOrganizationsController,
+  (c) => c.getAllOrganizationsController,
   async (req): Promise<PageableRequest<OrganizationsFilters>> => {
-    const { searchParams } = req.nextUrl;
+    const { page, limit } = parsePagination(req);
+    const { search } = Object.fromEntries(req.nextUrl.searchParams.entries());
     return {
-      page: Number(searchParams.get("page")) || 1,
-      limit: Number(searchParams.get("limit")) || 10,
+      page,
+      limit,
       filters: {
-        search: searchParams.get("query") || undefined,
+        search: search || undefined,
       },
     };
   },
 );
 
 export const POST = createContext(
-  (container) => container.createOrganizationController,
-  async (req) => req, // Pasamos el req completo porque el controller lo espera (handle(req: NextRequest))
+  (c) => c.createOrganizationController,
+  async (req) => {
+    const body = await req.json();
+    const validated = createOrganizationSchema.parse(body);
+
+    // Get userId from session for organization membership
+    const { userId } = await auth();
+    if (!userId) throw new Error("No autenticado");
+
+    return { ...validated, userId };
+  }
 );
+

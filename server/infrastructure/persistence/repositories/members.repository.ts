@@ -105,12 +105,24 @@ export class MembersRepository
       }
     }
 
-    if (filters.status) {
-      const statusInput = filters.status.toLowerCase()
-      const isValidStatus = (ALLOWED_STATUS as readonly string[]).includes(statusInput)
+    if (filters.membershipStatus) {
+      const statusInput = filters.membershipStatus.toLowerCase();
+      const isValidStatus = (ALLOWED_STATUS as readonly string[]).includes(statusInput);
 
       if (isValidStatus) {
-        conditions.push({ isActive: statusInput === "active" })
+        if (statusInput === "active") {
+          // Member IS active if they have AT LEAST ONE active membership
+          conditions.push({ memberships: { some: { status: "ACTIVE" } } });
+        } else {
+          // Member is INACTIVE if they have NO active memberships
+          conditions.push({
+            memberships: {
+              none: {
+                status: "ACTIVE"
+              }
+            }
+          });
+        }
       }
     }
 

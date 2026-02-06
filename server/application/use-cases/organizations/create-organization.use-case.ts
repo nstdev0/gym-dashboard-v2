@@ -3,7 +3,7 @@ import { Organization } from "@/server/domain/entities/Organization";
 import { CreateOrganizationInput } from "@/server/domain/types/organizations";
 
 export class CreateOrganizationUseCase {
-  constructor(private readonly repository: IOrganizationRepository) {}
+  constructor(private readonly repository: IOrganizationRepository) { }
 
   async execute(
     input: CreateOrganizationInput,
@@ -14,3 +14,5 @@ export class CreateOrganizationUseCase {
     return await this.repository.createWithTransaction(input, userId);
   }
 }
+
+export type ICreateOrganizationUseCase = InstanceType<typeof CreateOrganizationUseCase>;

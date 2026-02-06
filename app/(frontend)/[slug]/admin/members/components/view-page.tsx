@@ -9,9 +9,9 @@ import { Pagination } from "@/components/ui/pagination";
 import { MembersTable } from "./members-table";
 import Loading from "../loading";
 import { PageableResponse } from "@/server/shared/common/pagination";
-import { FilterConfiguration } from "@/components/ui/filters-input";
+import { FilterConfiguration } from "@/components/ui/smart-filters";
 import { useParams } from "next/navigation";
-import SmartFilters from "@/components/ui/filters-input";
+import SmartFilters from "@/components/ui/smart-filters";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -50,8 +50,8 @@ export default function MembersViewPage({
 
     filters: [
       {
-        key: "status",
-        label: "Estado",
+        key: "membership",
+        label: "Membresía",
         options: [
           { label: "Activo", value: "active" },
           { label: "Inactivo", value: "inactive" }
@@ -88,7 +88,6 @@ export default function MembersViewPage({
             {[
               { label: "Total Miembros", value: totalRecords.toString() },
               { label: "En esta página", value: members.length.toString() },
-              // { label: "Admins", value: ??? } <- Necesitas dato del backend
             ].map((stat, index) => (
               <Card key={index} className="p-3">
                 <p className="text-xs text-muted-foreground mb-1">

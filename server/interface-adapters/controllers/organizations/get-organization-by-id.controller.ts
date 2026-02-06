@@ -1,10 +1,15 @@
-import { GetOrganizationByIdUseCase } from "@/server/application/use-cases/organizations/get-organization-by-id.use-case";
+import { IGetOrganizationByIdUseCase } from "@/server/application/use-cases/organizations/get-organization-by-id.use-case";
+import { Organization } from "@/server/domain/entities/Organization";
+import { BadRequestError } from "@/server/domain/errors/common";
+import { ControllerExecutor } from "@/server/lib/api-handler";
 
-export class GetOrganizationByIdController {
-  constructor(private readonly useCase: GetOrganizationByIdUseCase) {}
+export class GetOrganizationByIdController implements ControllerExecutor<void, Organization | null> {
+  constructor(private readonly useCase: IGetOrganizationByIdUseCase) { }
 
-  async execute(id: string) {
-    const organization = await this.useCase.execute(id);
-    return organization;
+  async execute(input: void, id?: string) {
+    if (!id) {
+      throw new BadRequestError("No se proporcionó un id");
+    }
+    return this.useCase.execute(id);
   }
 }

@@ -14,7 +14,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
     const role = (params.role as string) || undefined
     const status = (params.status as string) || undefined
     const page = Number(params.page) || 1;
-    const limit = 10;
+    const limit = Number(params.limit) || 10;
 
     const container = await getContainer();
 

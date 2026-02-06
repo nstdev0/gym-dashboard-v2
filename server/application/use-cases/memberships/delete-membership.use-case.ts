@@ -2,7 +2,7 @@ import { IMembershipsRepository } from "@/server/application/repositories/member
 import { Membership } from "@/server/domain/entities/Membership";
 
 export class DeleteMembershipUseCase {
-  constructor(private readonly repository: IMembershipsRepository) {}
+  constructor(private readonly repository: IMembershipsRepository) { }
 
   async execute(id: string): Promise<Membership> {
     return this.repository.delete(id);
