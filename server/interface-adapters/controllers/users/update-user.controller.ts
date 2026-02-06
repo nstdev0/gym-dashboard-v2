@@ -11,7 +11,7 @@ const ALLOWED_ROLES: Role[] = [Role.GOD, Role.OWNER];
 export class UpdateUserController {
   constructor(private readonly useCase: IUpdateUserUseCase) { }
 
-  async execute(id: string, input: unknown) {
+  async execute(input: UpdateUserInput, id: string) {
     const validatedInput = UpdateUserSchema.safeParse(input);
 
     if (!validatedInput.success) {
@@ -38,8 +38,8 @@ export class UpdateUserController {
     }
 
     return await this.useCase.execute(
+      validatedInput.data,
       id,
-      validatedInput.data as unknown as UpdateUserInput,
     );
   }
 }

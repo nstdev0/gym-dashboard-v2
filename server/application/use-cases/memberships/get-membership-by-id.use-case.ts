@@ -2,9 +2,13 @@ import { IMembershipsRepository } from "@/server/application/repositories/member
 import { Membership } from "@/server/domain/entities/Membership";
 
 export class GetMembershipByIdUseCase {
-  constructor(private readonly repository: IMembershipsRepository) {}
+  constructor(private readonly repository: IMembershipsRepository) { }
 
   async execute(id: string): Promise<Membership | null> {
-    return this.repository.findUnique({ id });
+    const membership = await this.repository.findUnique({ id });
+    if (membership) {
+      membership.pricePaid = Number(membership.pricePaid);
+    }
+    return membership;
   }
 }

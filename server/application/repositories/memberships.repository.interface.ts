@@ -12,10 +12,11 @@ export type {
   MembershipsFilters,
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface IMembershipsRepository extends IBaseRepository<
   Membership,
   CreateMembershipInput,
   UpdateMembershipInput,
   MembershipsFilters
-> {}
+> {
+  findActiveMembershipByMemberId(memberId: string): Promise<Membership | null>;
+}

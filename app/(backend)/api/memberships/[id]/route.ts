@@ -1,32 +1,18 @@
+import { UpdateMembershipSchema } from "@/server/application/dtos/memberships.dto";
 import { createContext } from "@/server/lib/api-handler";
 
 export const GET = createContext(
-  (container) => container.getMembershipByIdController,
-  async (req, params) => {
-    const p = await params;
-    const id = Array.isArray(p?.id) ? p?.id[0] : p?.id;
-    if (!id) throw new Error("ID requerido");
-    return id;
-  },
+  (c) => c.getMembershipByIdController
 );
 
 export const PATCH = createContext(
-  (container) => container.updateMembershipController,
-  async (req, params) => {
-    const p = await params;
-    const id = Array.isArray(p?.id) ? p?.id[0] : p?.id;
-    if (!id) throw new Error("ID requerido");
+  (c) => c.updateMembershipController,
+  async (req) => {
     const body = await req.json();
-    return { id, data: body };
-  },
+    return UpdateMembershipSchema.parse(body);
+  }
 );
 
 export const DELETE = createContext(
-  (container) => container.deleteMembershipController,
-  async (req, params) => {
-    const p = await params;
-    const id = (Array.isArray(p?.id) ? p?.id[0] : p?.id) as string;
-    if (!id) throw new Error("ID requerido");
-    return id;
-  },
+  (c) => c.deleteMembershipController
 );
