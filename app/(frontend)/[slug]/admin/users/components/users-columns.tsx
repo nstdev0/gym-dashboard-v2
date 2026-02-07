@@ -15,52 +15,122 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { useDeleteUser } from "@/hooks/users/use-users";
+import { useState } from "react";
+
+const UserCell = ({ user }: { user: User }) => {
+    const params = useParams();
+    const slug = params.slug as string;
+
+    return (
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                {user.image ? (
+                    <Image
+                        src={user.image}
+                        alt={user.email}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover w-full h-full"
+                    />
+                ) : (
+                    <div className="text-xs font-medium text-primary uppercase">
+                        {user.email.substring(0, 2)}
+                    </div>
+                )}
+            </div>
+            <div className="flex flex-col">
+                <span className="font-medium text-foreground">
+                    {user.firstName ? `${user.firstName} ${user.lastName || ""}` : "Sin nombre"}
+                </span>
+                <Link
+                    href={`/${slug}/admin/users/${user.id}`}
+                    className="text-sm text-muted-foreground hover:underline"
+                >
+                    {user.email}
+                </Link>
+            </div>
+        </div>
+    );
+};
+
+const UserActions = ({ user }: { user: User }) => {
+    const params = useParams();
+    const slug = params.slug as string;
+    const { mutate: deleteUser, isPending } = useDeleteUser();
+    const [open, setOpen] = useState(false);
+
+    const handleDelete = () => {
+        deleteUser(user.id, {
+            onSuccess: () => {
+                setOpen(false);
+            },
+        });
+    };
+
+    return (
+        <div className="flex justify-center">
+            <Link href={`/${slug}/admin/users/${user.id}`}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Eye className="w-4 h-4" />
+                </Button>
+            </Link>
+            <Link href={`/${slug}/admin/users/${user.id}/edit`}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Edit className="w-4 h-4" />
+                </Button>
+            </Link>
+            <AlertDialog open={open} onOpenChange={setOpen}>
+                <AlertDialogTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Esto eliminará permanentemente al
+                            usuario
+                            <span className="font-medium text-foreground">
+                                {" "}
+                                {user.firstName} {user.lastName}
+                            </span>{" "}
+                            y todos sus datos asociados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
+                            disabled={isPending}
+                        >
+                            {isPending ? "Eliminando..." : "Eliminar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+};
 
 export const columns: ColumnDef<User>[] = [
     {
         accessorKey: "user",
         header: "Usuario",
-        cell: ({ row }) => {
-            const user = row.original;
-            const params = useParams();
-            const slug = params.slug as string;
-            return (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                        {user.image ? (
-                            <Image
-                                src={user.image}
-                                alt={user.email}
-                                width={32}
-                                height={32}
-                                className="rounded-full object-cover w-full h-full"
-                            />
-                        ) : (
-                            <div className="text-xs font-medium text-primary uppercase">
-                                {user.email.substring(0, 2)}
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="font-medium text-foreground">
-                            {user.firstName ? `${user.firstName} ${user.lastName || ""}` : "Sin nombre"}
-                        </span>
-                        <Link
-                            href={`/${slug}/admin/users/${user.id}`}
-                            className="text-sm text-muted-foreground hover:underline"
-                        >
-                            {user.email}
-                        </Link>
-                    </div>
-                </div>
-            );
-        },
+        cell: ({ row }) => <UserCell user={row.original} />,
     },
     {
         accessorKey: "role",
@@ -123,73 +193,6 @@ export const columns: ColumnDef<User>[] = [
     {
         id: "actions",
         header: () => <div className="text-center">Acciones</div>,
-        cell: ({ row }) => {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const params = useParams();
-            const slug = params.slug as string;
-            const user = row.original;
-
-            return (
-                <div className="flex justify-center">
-                    <Link href={`/${slug}/admin/users/${user.id}`}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="w-4 h-4" />
-                        </Button>
-                    </Link>
-                    <Link href={`/${slug}/admin/users/${user.id}/edit`}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Edit className="w-4 h-4" />
-                        </Button>
-                    </Link>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción no se puede deshacer. Esto eliminará
-                                    permanentemente al usuario
-                                    <span className="font-medium text-foreground">
-                                        {" "}
-                                        {user.firstName} {user.lastName}
-                                    </span>{" "}
-                                    y todos sus datos asociados.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                    className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
-                                    onClick={async () => {
-                                        try {
-                                            await api.delete<User>(`/api/users/${user.id}`);
-                                            toast.success("Usuario eliminado correctamente");
-                                            window.location.reload();
-                                        } catch (error) {
-                                            if (error instanceof ApiError) {
-                                                toast.error(error.message);
-                                            } else {
-                                                toast.error("Error al eliminar usuario");
-                                            }
-                                            console.error(error);
-                                        }
-                                    }}
-                                >
-                                    Eliminar
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-            );
-        },
+        cell: ({ row }) => <UserActions user={row.original} />,
     },
 ];

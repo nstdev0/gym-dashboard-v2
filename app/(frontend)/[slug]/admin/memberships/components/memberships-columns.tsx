@@ -5,9 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
+import { useState } from "react";
+import { useDeleteMembership } from "@/hooks/memberships/use-memberships";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -64,16 +63,15 @@ function formatCurrency(amount: number): string {
 }
 
 function ActionsCell({ membership, slug }: { membership: MembershipWithRelations; slug: string }) {
-    const router = useRouter();
+    const { mutate: deleteMembership, isPending } = useDeleteMembership();
+    const [open, setOpen] = useState(false);
 
-    const handleDelete = async () => {
-        try {
-            await api.delete(`/api/memberships/${membership.id}`);
-            toast.success("Membresía eliminada correctamente");
-            router.refresh();
-        } catch {
-            toast.error("Error al eliminar la membresía");
-        }
+    const handleDelete = () => {
+        deleteMembership(membership.id, {
+            onSuccess: () => {
+                setOpen(false);
+            },
+        });
     };
 
     return (
@@ -88,7 +86,7 @@ function ActionsCell({ membership, slug }: { membership: MembershipWithRelations
                     <Edit className="h-4 w-4" />
                 </Link>
             </Button>
-            <AlertDialog>
+            <AlertDialog open={open} onOpenChange={setOpen}>
                 <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
@@ -102,9 +100,16 @@ function ActionsCell({ membership, slug }: { membership: MembershipWithRelations
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                            Eliminar
+                        <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
+                            className="bg-destructive hover:bg-destructive/90"
+                            disabled={isPending}
+                        >
+                            {isPending ? "Eliminando..." : "Eliminar"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

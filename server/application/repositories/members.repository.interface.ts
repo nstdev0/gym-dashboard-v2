@@ -1,4 +1,4 @@
-import { DocType, Member } from "@entities/Member";
+import { Member } from "@entities/Member";
 import { IBaseRepository } from "./base.repository.interface";
 import {
   CreateMemberInput,

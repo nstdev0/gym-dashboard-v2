@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { UpdateOrganizationSettingsUseCase } from "@/server/application/use-cases/organization/update-organization-settings.use-case";
 import { auth } from "@clerk/nextjs/server";
 import { UpdateOrganizationSettingsInput } from "@/server/application/dtos/organizations.dto";

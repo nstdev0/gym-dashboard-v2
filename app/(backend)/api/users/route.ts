@@ -1,7 +1,6 @@
 import { UsersFilters } from "@/server/application/repositories/users.repository.interface";
 import { createContext } from "@/server/lib/api-handler";
 import { PageableRequest } from "@/server/shared/common/pagination";
-import { Role } from "@/generated/prisma/client";
 
 export const GET = createContext(
   (container) => container.getAllUsersController,

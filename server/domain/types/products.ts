@@ -14,7 +14,9 @@ export interface CreateProductInput {
 export type UpdateProductInput = Partial<CreateProductInput>;
 
 export interface ProductsFilters {
-  name?: string;
-  isActive?: boolean;
   search?: string;
+  sort?: string;
+  type?: string;
+  status?: string;
+  isActive?: boolean;
 }

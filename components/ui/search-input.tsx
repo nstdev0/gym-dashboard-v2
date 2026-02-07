@@ -1,30 +1,15 @@
 "use client";
 
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { Search } from "lucide-react";
 import { Input } from "./input";
+import { useUrlFilters } from "@/hooks/use-url-filters";
 
 export function SearchInput({ placeholder }: { placeholder: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { setFilter, getFilter } = useUrlFilters();
 
-  // Espera 350ms después de que el usuario deje de escribir
   const handleSearch = useDebouncedCallback((term: string) => {
-    const params = new URLSearchParams(searchParams);
-
-    // Si escribe algo, reseteamos el page
-    params.delete("page");
-
-    if (term) {
-      params.set("search", term);
-    } else {
-      params.delete("search");
-    }
-
-    // replace actualiza la URL sin agregar una entrada al historial (UX suave)
-    router.replace(`${pathname}?${params.toString()}`);
+    setFilter("search", term);
   }, 350);
 
   return (
@@ -34,7 +19,7 @@ export function SearchInput({ placeholder }: { placeholder: string }) {
         placeholder={placeholder}
         className="pl-9"
         onChange={(e) => handleSearch(e.target.value)}
-        defaultValue={searchParams.get("search")?.toString()}
+        defaultValue={getFilter("search")?.toString()}
       />
     </div>
   );

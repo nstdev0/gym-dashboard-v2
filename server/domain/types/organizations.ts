@@ -8,4 +8,6 @@ export type UpdateOrganizationInput = Partial<CreateOrganizationInput>;
 
 export interface OrganizationsFilters {
   search?: string;
+  sort?: string;
+  status?: string;
 }

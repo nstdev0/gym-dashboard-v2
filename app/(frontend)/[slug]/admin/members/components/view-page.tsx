@@ -3,36 +3,38 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card } from "@/components/ui/card";
 import { Suspense } from "react";
-import { Member } from "@/server/domain/entities/Member";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
 import { MembersTable } from "./members-table";
 import Loading from "../loading";
-import { PageableResponse } from "@/server/shared/common/pagination";
 import { FilterConfiguration } from "@/components/ui/smart-filters";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import SmartFilters from "@/components/ui/smart-filters";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
+import { useMembersList } from "@/hooks/members/use-members";
+import { Member } from "@/server/domain/entities/Member";
 
-interface MembersViewPageProps {
-  paginatedMembers: PageableResponse<Member>;
-}
-
-export default function MembersViewPage({
-  paginatedMembers,
-}: MembersViewPageProps) {
-  const {
-    records: members,
-    currentPage,
-    totalPages,
-    totalRecords,
-  } = paginatedMembers;
-
+export default function MembersViewPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
+
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+  const search = searchParams.get("search") || undefined;
+  const sort = searchParams.get("sort") || undefined;
+  const membership = searchParams.get("membership") || undefined;
+
+  const { data: paginatedMembers, isLoading } = useMembersList({
+    page,
+    limit,
+    search,
+    sort,
+    membershipStatus: membership, // Mapping 'membership' filter to 'status' param if that's the intent
+  });
 
   const filtersConfig: FilterConfiguration<Member> = {
     sort: [
@@ -58,7 +60,17 @@ export default function MembersViewPage({
         ]
       }
     ]
-  }
+  };
+
+  // If loading or no data, handle appropriately. 
+  // Since we prefetch, data should be available immediately unless parameters changed.
+  // keepPreviousData is used in hook, so pagination should be smooth.
+
+  const members = paginatedMembers?.records || [];
+  const totalPages = paginatedMembers?.totalPages || 0;
+  const totalRecords = paginatedMembers?.totalRecords || 0;
+  const currentRecordsCount = members.length;
+
   return (
     <Suspense fallback={<Loading />}>
       <DashboardLayout
@@ -87,14 +99,14 @@ export default function MembersViewPage({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label: "Total Miembros", value: totalRecords.toString() },
-              { label: "En esta página", value: members.length.toString() },
+              { label: "En esta página", value: currentRecordsCount.toString() },
             ].map((stat, index) => (
               <Card key={index} className="p-3">
                 <p className="text-xs text-muted-foreground mb-1">
                   {stat.label}
                 </p>
                 <p className="text-xl font-bold text-foreground">
-                  {stat.value}
+                  {isLoading ? "..." : stat.value}
                 </p>
               </Card>
             ))}
@@ -108,10 +120,17 @@ export default function MembersViewPage({
           </div>
 
           <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <MembersTable members={members} />
-            <div className="p-2 border-t bg-background">
-              <Pagination currentPage={currentPage} totalPages={totalPages} />
-            </div>
+            {isLoading ? (
+              <div className="p-4 flex justify-center items-center h-full">Cargando...</div>
+            ) : (
+              <>
+                <MembersTable members={members} />
+                <div className="p-2 border-t bg-background">
+                  <Pagination currentPage={page} totalPages={totalPages} />
+                </div>
+              </>
+            )}
+
           </Card>
         </div>
       </DashboardLayout>

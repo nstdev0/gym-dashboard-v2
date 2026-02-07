@@ -36,7 +36,7 @@ export class OrganizationsRepository
     filters: OrganizationsFilters,
   ): Promise<[Prisma.OrganizationWhereInput, Prisma.OrganizationOrderByWithRelationInput]> {
     const whereClause: Prisma.OrganizationWhereInput = {};
-    const orderByClause: Prisma.OrganizationOrderByWithRelationInput = { createdAt: "desc" };
+    let orderByClause: Prisma.OrganizationOrderByWithRelationInput = { createdAt: "desc" };
 
     if (filters.search) {
       const searchTerms = filters.search.trim().split(/\s+/).filter(Boolean);
@@ -45,12 +45,27 @@ export class OrganizationsRepository
         whereClause.AND = searchTerms.map((term) => ({
           OR: [
             { name: { contains: term, mode: "insensitive" } },
-            // Organization doesn't have email in schema directly usually, but if it does:
-            // { email: { contains: term, mode: "insensitive" } }, 
+            { slug: { contains: term, mode: "insensitive" } },
           ],
         }));
       }
     }
+
+    if (filters.status) {
+      const status = filters.status.toLowerCase();
+      if (status === 'active') whereClause.isActive = true;
+      if (status === 'inactive') whereClause.isActive = false;
+    }
+
+    if (filters.sort) {
+      const [field, direction] = filters.sort.split("-");
+      const isValidDirection = direction === "asc" || direction === "desc";
+      if (isValidDirection) {
+        if (field === "name") orderByClause = { name: direction as Prisma.SortOrder };
+        if (field === "createdAt") orderByClause = { createdAt: direction as Prisma.SortOrder };
+      }
+    }
+
     return [whereClause, orderByClause];
   }
 

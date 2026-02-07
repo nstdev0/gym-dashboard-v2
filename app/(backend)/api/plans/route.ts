@@ -8,12 +8,14 @@ export const GET = createContext(
   (c) => c.getAllPlansController,
   async (req): Promise<PageableRequest<PlansFilters>> => {
     const { page, limit } = parsePagination(req);
-    const { search } = Object.fromEntries(req.nextUrl.searchParams.entries());
+    const { search, sort, status } = Object.fromEntries(req.nextUrl.searchParams.entries());
     return {
       page,
       limit,
       filters: {
         search: search || undefined,
+        sort: sort || undefined,
+        status: status || undefined,
       },
     };
   }

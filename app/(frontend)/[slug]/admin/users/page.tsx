@@ -1,32 +1,41 @@
-import { getContainer } from "@/server/di/container";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import UsersViewPage from "./components/view-page";
+import { UsersService } from "@/lib/services/users.service";
+import { userKeys } from "@/lib/react-query/query-keys";
+import { makeQueryClient } from "@/lib/react-query/client-config";
 
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-    params: Promise<{ slug: string }>;
 }
 
 export default async function UsersPage({ searchParams }: PageProps) {
+    const queryClient = makeQueryClient();
     const params = await searchParams;
-    const search = (params.search as string) || undefined;
-    const sort = (params.sort as string) || undefined
-    const role = (params.role as string) || undefined
-    const status = (params.status as string) || undefined
+
     const page = Number(params.page) || 1;
     const limit = Number(params.limit) || 10;
+    const search = (params.search as string) || undefined;
+    const sort = (params.sort as string) || undefined;
+    const role = (params.role as string) || undefined;
+    const status = (params.status as string) || undefined;
 
-    const container = await getContainer();
-
-    const paginatedUsers = await container.getAllUsersController.execute({
+    const filters = {
         page,
         limit,
-        filters: {
-            search: search,
-            sort: sort,
-            role: role,
-            status: status
-        },
+        search,
+        sort,
+        role,
+        status,
+    };
+
+    await queryClient.prefetchQuery({
+        queryKey: userKeys.list(filters),
+        queryFn: () => UsersService.getAll(filters),
     });
 
-    return <UsersViewPage paginatedUsers={paginatedUsers} />;
+    return (
+        <HydrationBoundary state={dehydrate(queryClient)}>
+            <UsersViewPage />
+        </HydrationBoundary>
+    );
 }

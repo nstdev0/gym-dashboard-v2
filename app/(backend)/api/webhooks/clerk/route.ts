@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-  } catch (err) {
+  } catch (error) {
     return new Response("Error verificando webhook", { status: 400 });
   }
 
@@ -189,7 +189,7 @@ export async function POST(req: Request) {
             data: { name, slug: slug || undefined, image: image_url || undefined }
           });
           console.log(`🔄 Organización actualizada: ${name}`);
-        } catch (e) {
+        } catch (error) {
           console.log("⚠️ Intento de actualizar organización no existente (ignorado)");
         }
         break;

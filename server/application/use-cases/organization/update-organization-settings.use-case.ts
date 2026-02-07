@@ -24,13 +24,6 @@ export class UpdateOrganizationSettingsUseCase {
         // or a slightly deeper merge if needed. 
         // Since our input settings structure matches the DB structure, let's merge section by section.
 
-        const newSettings = {
-            ...currentSettings,
-            ...(settings?.general ? { general: { ...currentSettings.general, ...settings.general } } : {}),
-            ...(settings?.operations ? { operations: { ...currentSettings.operations, ...settings.operations } } : {}),
-            ...(settings?.notifications ? { notifications: { ...currentSettings.notifications, ...settings.notifications } } : {}),
-        };
-
         // If a whole section was missing in currentSettings but present in input, the above spread handles it? 
         // No, `...currentSettings.general` would throw if currentSettings.general is undefined.
         // Let's make it safer.

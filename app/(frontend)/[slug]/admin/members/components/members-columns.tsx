@@ -15,46 +15,142 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
 import Image from "next/image";
+import { useDeleteMember } from "@/hooks/members/use-members";
+import { useState } from "react";
+
+// Component for the Member Name cell to correctly use hooks
+const MemberCell = ({ member }: { member: Member }) => {
+  const params = useParams();
+  const slug = params.slug as string;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+        {member.image ? (
+          <Image
+            src={member.image}
+            alt={`${member.firstName} ${member.lastName}`}
+            width={32}
+            height={32}
+            className="rounded-full"
+          />
+        ) : (
+          <Users className="w-4 h-4 text-primary" />
+        )}
+      </div>
+      <div>
+        <Link
+          href={`/${slug}/admin/members/${member.id}`}
+          className="font-medium text-foreground hover:underline"
+        >
+          {member.firstName} {member.lastName}
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+// Component for the Plan cell to correctly use hooks
+const PlanCell = ({ member }: { member: Member }) => {
+  const params = useParams();
+  const slug = params.slug as string;
+  const memberWithMembership = member as Member & {
+    memberships?: Array<{ plan?: { name: string } }>;
+  };
+  const activePlan = memberWithMembership.memberships?.[0]?.plan?.name;
+
+  if (activePlan) {
+    return <div className="text-foreground font-medium">{activePlan}</div>;
+  }
+
+  return (
+    <Link
+      href={`/${slug}/admin/memberships/new?memberId=${member.id}`}
+      className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+    >
+      <span>Sin plan</span>
+      <PlusCircle className="w-4 h-4" />
+    </Link>
+  );
+};
+
+// Component for Actions to correctly use hooks and mutations
+const MemberActions = ({ member }: { member: Member }) => {
+  const params = useParams();
+  const slug = params.slug as string;
+  const { mutate: deleteMember, isPending } = useDeleteMember();
+  const [open, setOpen] = useState(false);
+
+  const handleDelete = () => {
+    deleteMember(member.id, {
+      onSuccess: () => {
+        setOpen(false);
+      },
+    });
+  };
+
+  return (
+    <div className="flex justify-center">
+      <Link href={`/${slug}/admin/members/${member.id}`}>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Eye className="w-4 h-4" />
+        </Button>
+      </Link>
+      <Link href={`/${slug}/admin/members/${member.id}/edit`}>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Edit className="w-4 h-4" />
+        </Button>
+      </Link>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente al
+              miembro
+              <span className="font-medium text-foreground">
+                {" "}
+                {member.firstName} {member.lastName}
+              </span>{" "}
+              y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isPending}
+            >
+              {isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
 
 export const columns: ColumnDef<Member>[] = [
   {
     accessorKey: "member",
     header: "Miembro",
-    cell: ({ row }) => {
-      const member = row.original;
-      const params = useParams();
-      const slug = params.slug as string;
-      return (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            {member.image ? (
-              <Image
-                src={member.image}
-                alt={`${member.firstName} ${member.lastName}`}
-                width={32}
-                height={32}
-                className="rounded-full"
-              />
-            ) : (
-              <Users className="w-4 h-4 text-primary" />
-            )}
-          </div>
-          <div>
-            <Link
-              href={`/${slug}/admin/members/${member.id}`}
-              className="font-medium text-foreground"
-            >
-              {member.firstName} {member.lastName}
-            </Link>
-          </div>
-        </div>
-      );
-    },
+    cell: ({ row }) => <MemberCell member={row.original} />,
   },
   {
     accessorKey: "contact",
@@ -82,31 +178,7 @@ export const columns: ColumnDef<Member>[] = [
   {
     accessorKey: "plan",
     header: "Plan",
-    cell: ({ row }) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const params = useParams();
-      const slug = params.slug as string;
-      const member = row.original as Member & {
-        memberships?: Array<{ plan?: { name: string } }>;
-      };
-      const activePlan = member.memberships?.[0]?.plan?.name;
-
-      if (activePlan) {
-        return (
-          <div className="text-foreground font-medium">{activePlan}</div>
-        );
-      }
-
-      return (
-        <Link
-          href={`/${slug}/admin/memberships/new?memberId=${member.id}`}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
-        >
-          <span>Sin plan</span>
-          <PlusCircle className="w-4 h-4" />
-        </Link>
-      );
-    },
+    cell: ({ row }) => <PlanCell member={row.original} />,
   },
   {
     accessorKey: "createdAt",
@@ -122,73 +194,6 @@ export const columns: ColumnDef<Member>[] = [
   {
     id: "actions",
     header: () => <div className="text-center">Acciones</div>,
-    cell: ({ row }) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const params = useParams();
-      const slug = params.slug as string;
-      const member = row.original;
-
-      return (
-        <div className="flex justify-center">
-          <Link href={`/${slug}/admin/members/${member.id}`}>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Eye className="w-4 h-4" />
-            </Button>
-          </Link>
-          <Link href={`/${slug}/admin/members/${member.id}/edit`}>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Edit className="w-4 h-4" />
-            </Button>
-          </Link>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. Esto eliminará
-                  permanentemente al miembro
-                  <span className="font-medium text-foreground">
-                    {" "}
-                    {member.firstName} {member.lastName}
-                  </span>{" "}
-                  y todos sus datos asociados.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
-                  onClick={async () => {
-                    try {
-                      await api.delete<Member>(`/api/members/${member.id}`);
-                      toast.success("Miembro eliminado correctamente");
-                      window.location.reload(); // Simple refresh for now.
-                    } catch (error) {
-                      if (error instanceof ApiError) {
-                        toast.error(error.message);
-                      } else {
-                        toast.error("Error al eliminar miembro");
-                      }
-                      console.error(error);
-                    }
-                  }}
-                >
-                  Eliminar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      );
-    },
+    cell: ({ row }) => <MemberActions member={row.original} />,
   },
 ];

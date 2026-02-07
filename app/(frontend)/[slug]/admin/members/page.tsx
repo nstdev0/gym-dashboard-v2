@@ -1,25 +1,39 @@
-import { getContainer } from "@/server/di/container";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import MembersViewPage from "./components/view-page";
-import { MembershipStatus } from "@/server/application/dtos/memberships.dto";
+import { MembersService } from "@/lib/services/members.service";
+import { memberKeys } from "@/lib/react-query/query-keys";
+import { makeQueryClient } from "@/lib/react-query/client-config";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function MembersPage({ searchParams }: PageProps) {
+  const queryClient = makeQueryClient();
   const params = await searchParams;
-  const search = (params.search as string) || undefined;
-  const sort = (params.sort as string) || undefined
+
   const page = Number(params.page) || 1;
   const limit = Number(params.limit) || 10;
+  const search = (params.search as string) || undefined;
+  const sort = (params.sort as string) || undefined;
+  const membership = (params.membership as string) || undefined;
 
-  const container = await getContainer();
-
-  const paginatedMembers = await container.getAllMembersController.execute({
+  const filters = {
     page,
     limit,
-    filters: { search: search, sort: sort, membershipStatus: params.membership as MembershipStatus },
+    search,
+    sort,
+    status: membership,
+  };
+
+  await queryClient.prefetchQuery({
+    queryKey: memberKeys.list(filters),
+    queryFn: () => MembersService.getAll(filters),
   });
 
-  return <MembersViewPage paginatedMembers={paginatedMembers} />;
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <MembersViewPage />
+    </HydrationBoundary>
+  );
 }

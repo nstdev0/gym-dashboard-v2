@@ -7,29 +7,41 @@ import { Plan } from "@/server/domain/entities/Plan";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
 import Loading from "../loading";
-import { PageableResponse } from "@/server/shared/common/pagination";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { PlansTable } from "./plans-table";
 import SmartFilters, { FilterConfiguration } from "@/components/ui/smart-filters";
+import { usePlansList } from "@/hooks/plans/use-plans";
 
-interface PlansViewPageProps {
-    paginatedPlans: PageableResponse<Plan>;
-}
-
-export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
-    const {
-        records: plans,
-        currentPage,
-        totalPages,
-        totalRecords,
-    } = paginatedPlans;
-
+export default function PlansViewPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const slug = params.slug as string;
+
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || undefined;
+    const sort = searchParams.get("sort") || undefined;
+    const status = searchParams.get("status") || undefined;
+
+    const { data: paginatedPlans, isLoading } = usePlansList({
+        page,
+        limit,
+        search,
+        sort,
+        status,
+    });
+
+    const plans = paginatedPlans?.records || [];
+    const totalPages = paginatedPlans?.totalPages || 0;
+    const totalRecords = paginatedPlans?.totalRecords || 0;
+
+    // Logic for active plans count if backend doesn't provide it separately
+    // Note: This only counts loaded active plans, ideally backend provides stats
+    const activePlansCount = plans.filter(p => p.isActive).length;
 
     const filtersConfig: FilterConfiguration<Plan> = {
         sort: [
@@ -75,7 +87,8 @@ export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
                             { label: "Total Planes", value: totalRecords.toString() },
-                            { label: "Planes Activos", value: plans.filter(p => p.isActive).length.toString() },
+                            // Need real stats from backend for total active plans
+                            { label: "Planes Activos (Página Actual)", value: activePlansCount.toString() },
                             { label: "En esta página", value: plans.length.toString() },
                         ].map((stat, index) => (
                             <Card key={index} className="p-3">
@@ -83,7 +96,7 @@ export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
                                     {stat.label}
                                 </p>
                                 <p className="text-xl font-bold text-foreground">
-                                    {stat.value}
+                                    {isLoading ? "..." : stat.value}
                                 </p>
                             </Card>
                         ))}
@@ -95,10 +108,17 @@ export default function PlansViewPage({ paginatedPlans }: PlansViewPageProps) {
                     </div>
 
                     <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
-                        <PlansTable plans={plans} />
-                        <div className="p-2 border-t bg-background">
-                            <Pagination currentPage={currentPage} totalPages={totalPages} />
-                        </div>
+                        {isLoading ? (
+                            <div className="p-4 flex justify-center items-center h-full">Cargando...</div>
+                        ) : (
+                            <>
+                                <PlansTable plans={plans} />
+                                <div className="p-2 border-t bg-background">
+                                    <Pagination currentPage={page} totalPages={totalPages} />
+                                </div>
+                            </>
+                        )}
+
                     </Card>
                 </div>
             </DashboardLayout>

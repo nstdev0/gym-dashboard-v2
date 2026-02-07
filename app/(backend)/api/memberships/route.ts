@@ -4,7 +4,19 @@ import { parsePagination } from "@/server/shared/utils/pagination-parser";
 
 export const GET = createContext(
   (c) => c.getAllMembershipsController,
-  async (req) => parsePagination(req)
+  async (req) => {
+    const { page, limit } = parsePagination(req);
+    const { search, sort, status } = Object.fromEntries(req.nextUrl.searchParams.entries());
+    return {
+      page,
+      limit,
+      filters: {
+        search: search || undefined,
+        sort: sort || undefined,
+        status: status || undefined,
+      }
+    };
+  }
 );
 
 export const POST = createContext(

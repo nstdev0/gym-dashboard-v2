@@ -1,4 +1,3 @@
-import { Role } from "@/generated/prisma/enums";
 import { z } from "zod";
 
 // Roles permitidos para crear usuarios (excluye GOD)

@@ -1,37 +1,43 @@
-import { getContainer } from "@/server/di/container";
-import { Suspense } from "react";
-import { MembershipsViewPage } from "./components/view-page";
-import { Metadata } from "next";
-import Loading from "./loading";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { MembershipsViewPage } from "./components/view-page"; // Named import
+import { MembershipsService } from "@/lib/services/memberships.service";
+import { membershipKeys } from "@/lib/react-query/query-keys";
+import { makeQueryClient } from "@/lib/react-query/client-config";
 
-export const metadata: Metadata = {
-    title: "Membresías",
-    description: "Gestión de membresías del gimnasio",
-};
-
-interface Props {
-    searchParams: Promise<{ page?: string; limit?: string; search?: string; status?: string; sort?: string }>;
+interface PageProps {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function MembershipsPage({ searchParams }: Props) {
+export default async function MembershipsPage({ searchParams }: PageProps) {
+    const queryClient = makeQueryClient();
     const params = await searchParams;
-    const container = await getContainer();
 
-    const request = {
-        page: Number(params.page) || 1,
-        limit: Number(params.limit) || 10,
-        filters: {
-            search: params.search || undefined,
-            status: params.status || undefined,
-            sort: params.sort || undefined,
-        },
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 10;
+    const search = (params.search as string) || undefined;
+    const sort = (params.sort as string) || undefined;
+    const status = (params.status as string) || undefined;
+    const planId = (params.planId as string) || undefined;
+    const memberId = (params.memberId as string) || undefined;
+
+    const filters = {
+        page,
+        limit,
+        search,
+        sort,
+        status,
+        planId,
+        memberId,
     };
 
-    const paginatedMemberships = await container.getAllMembershipsController.execute(request);
+    await queryClient.prefetchQuery({
+        queryKey: membershipKeys.list(filters),
+        queryFn: () => MembershipsService.getAll(filters),
+    });
 
     return (
-        <Suspense fallback={<Loading />}>
-            <MembershipsViewPage paginatedMemberships={paginatedMemberships} />
-        </Suspense>
+        <HydrationBoundary state={dehydrate(queryClient)}>
+            <MembershipsViewPage />
+        </HydrationBoundary>
     );
 }

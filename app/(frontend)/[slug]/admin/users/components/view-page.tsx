@@ -7,32 +7,40 @@ import { User } from "@/server/domain/entities/User";
 import { SearchInput } from "@/components/ui/search-input";
 import { Pagination } from "@/components/ui/pagination";
 import { UsersTable } from "./users-table";
-import { PageableResponse } from "@/server/shared/common/pagination";
 import Loading from "../loading";
 import { FilterConfiguration } from "@/components/ui/smart-filters";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import SmartFilters from "@/components/ui/smart-filters";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { useUsersList } from "@/hooks/users/use-users";
 
-interface UsersViewPageProps {
-    paginatedUsers: PageableResponse<User>;
-}
-
-export default function UsersViewPage({
-    paginatedUsers,
-}: UsersViewPageProps) {
-    const {
-        records: users,
-        currentPage,
-        totalPages,
-        totalRecords,
-    } = paginatedUsers;
-
+export default function UsersViewPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const slug = params.slug as string;
+
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || undefined;
+    const sort = searchParams.get("sort") || undefined;
+    const role = searchParams.get("role") || undefined;
+    const status = searchParams.get("status") || undefined;
+
+    const { data: paginatedUsers, isLoading } = useUsersList({
+        page,
+        limit,
+        search,
+        sort,
+        role,
+        status,
+    });
+
+    const users = paginatedUsers?.records || [];
+    const totalPages = paginatedUsers?.totalPages || 0;
+    const totalRecords = paginatedUsers?.totalRecords || 0;
 
     const filtersConfig: FilterConfiguration<User> = {
         sort: [
@@ -53,10 +61,10 @@ export default function UsersViewPage({
                 key: "role",
                 label: "Rol",
                 options: [
-                    { label: "Propietario", value: "owner" },
-                    { label: "Administrador", value: "admin" },
-                    { label: "STAFF", value: "staff" },
-                    { label: "Entrenador", value: "trainer" }
+                    { label: "Propietario", value: "OWNER" },
+                    { label: "Administrador", value: "ADMIN" },
+                    { label: "STAFF", value: "STAFF" },
+                    { label: "Entrenador", value: "TRAINER" }
                 ]
             },
             {
@@ -88,13 +96,6 @@ export default function UsersViewPage({
                     }
                 />
                 <div className="flex flex-col h-full space-y-4 overflow-hidden">
-
-
-                    {/* ⚠️ ADVERTENCIA DE LÓGICA: 
-                        Estas estadísticas solo reflejan la página actual (ej. 10 usuarios), 
-                        NO el total de la base de datos. 
-                        Para hacerlo bien, el backend debería devolver un objeto 'stats' junto con la paginación.
-                    */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
                             { label: "Total Usuarios", value: totalRecords.toString() },
@@ -106,7 +107,7 @@ export default function UsersViewPage({
                                     {stat.label}
                                 </p>
                                 <p className="text-xl font-bold text-foreground">
-                                    {stat.value}
+                                    {isLoading ? "..." : stat.value}
                                 </p>
                             </Card>
                         ))}
@@ -120,10 +121,17 @@ export default function UsersViewPage({
                     </div>
 
                     <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
-                        <UsersTable users={users} />
-                        <div className="p-2 border-t bg-background">
-                            <Pagination currentPage={currentPage} totalPages={totalPages} />
-                        </div>
+                        {isLoading ? (
+                            <div className="p-4 flex justify-center items-center h-full">Cargando...</div>
+                        ) : (
+                            <>
+                                <UsersTable users={users} />
+                                <div className="p-2 border-t bg-background">
+                                    <Pagination currentPage={page} totalPages={totalPages} />
+                                </div>
+                            </>
+                        )}
+
                     </Card>
                 </div>
             </DashboardLayout>

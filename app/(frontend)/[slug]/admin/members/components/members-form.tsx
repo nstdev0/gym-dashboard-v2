@@ -94,6 +94,7 @@ export default function MemberForm({
   };
 
   const onInvalid = (errors: any) => {
+    console.log(errors);
   };
 
   const selectedDocType = form.watch("docType");

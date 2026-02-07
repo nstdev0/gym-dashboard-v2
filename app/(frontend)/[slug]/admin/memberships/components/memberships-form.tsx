@@ -23,7 +23,6 @@ import { MembershipStatus } from "@/server/domain/entities/Membership";
 import { MemberCombobox } from "./member-combobox";
 import { createMembershipSchema } from "@/server/application/dtos/memberships.dto";
 import { Member } from "@/server/domain/entities/Member";
-import { Plan } from "@/server/domain/entities/Plan";
 
 export interface SelectablePlan {
     id: string;
