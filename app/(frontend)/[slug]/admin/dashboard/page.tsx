@@ -16,7 +16,6 @@ import {
     AlertTriangle,
     ArrowRight,
     Dumbbell,
-    Activity,
     Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -276,7 +275,39 @@ export default function DashboardPage() {
                     }
                 />
 
-                {/* KPI Stats Grid */}
+                {/* Quick Actions - Row 1 */}
+                <Card>
+                    <CardContent className="px-4 sm:px-6 py-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <Link href={`/${slug}/admin/members/new`}>
+                                <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
+                                    <UserPlus className="h-5 w-5" />
+                                    <span className="text-xs sm:text-sm">Nuevo Miembro</span>
+                                </Button>
+                            </Link>
+                            <Link href={`/${slug}/admin/members`}>
+                                <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
+                                    <Users className="h-5 w-5" />
+                                    <span className="text-xs sm:text-sm">Ver Miembros</span>
+                                </Button>
+                            </Link>
+                            <Link href={`/${slug}/admin/memberships`}>
+                                <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
+                                    <CreditCard className="h-5 w-5" />
+                                    <span className="text-xs sm:text-sm">Membresías</span>
+                                </Button>
+                            </Link>
+                            <Link href={`/${slug}/admin/products`}>
+                                <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
+                                    <Dumbbell className="h-5 w-5" />
+                                    <span className="text-xs sm:text-sm">Productos</span>
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* KPI Stats Grid - Row 2 */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                     <StatCard
                         title="Miembros Activos"
@@ -287,7 +318,7 @@ export default function DashboardPage() {
                     />
                     <StatCard
                         title="Ingresos"
-                        value={metrics?.revenue.value.toLocaleString('es-ES', { style: 'currency', currency: 'PEN' }) ?? 0}
+                        value={metrics?.revenue.value.toLocaleString('es-ES', { style: 'currency', currency: metrics?.currency || 'PEN' }) ?? 0}
                         change={metrics?.revenue.percentageChange ?? 0}
                         icon={DollarSign}
                         isLoading={loading}
@@ -301,10 +332,10 @@ export default function DashboardPage() {
                     />
                 </div>
 
-                {/* Main Content Grid - Row 1 */}
+                {/* Main Content Grid - Row 3 */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                    {/* Revenue Chart */}
-                    <Card className="lg:col-span-2">
+                    {/* Revenue Chart - Full width visually (or col-span-3) */}
+                    <Card className="lg:col-span-3">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-base sm:text-lg font-semibold">Ingresos</CardTitle>
                             <Select value={grouping} onValueChange={(v: any) => handleGroupingChange(v)}>
@@ -339,7 +370,7 @@ export default function DashboardPage() {
                                                 fontSize={12}
                                                 tickLine={false}
                                                 axisLine={false}
-                                                tickFormatter={(value) => `$${value}`}
+                                                tickFormatter={(value) => value.toLocaleString('es-ES', { style: 'currency', currency: metrics?.currency || 'PEN', maximumFractionDigits: 0 })}
                                             />
                                             <Tooltip
                                                 cursor={{ fill: "transparent" }}
@@ -353,7 +384,7 @@ export default function DashboardPage() {
                                                                             Ingresos
                                                                         </span>
                                                                         <span className="font-bold text-muted-foreground">
-                                                                            {payload[0]?.value?.toLocaleString('es-ES', { style: 'currency', currency: 'PEN' })}
+                                                                            {payload[0]?.value?.toLocaleString('es-ES', { style: 'currency', currency: metrics?.currency || 'PEN' })}
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -376,8 +407,54 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Recent Members */}
+                    {/* Popular Plans */}
                     <Card className="lg:col-span-1">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                            <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                                <Dumbbell className="h-4 w-4 text-primary" />
+                                Planes Populares
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {metrics?.salesByPlan.sort((a, b) => b.count - a.count).map((plan) => {
+                                        const totalCount = metrics.salesByPlan.reduce((acc, p) => acc + p.count, 0);
+                                        const percentage = totalCount > 0 ? (plan.count / totalCount) * 100 : 0;
+
+                                        return (
+                                            <div key={plan.planName} className="space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-foreground">{plan.planName}</span>
+                                                    <span className="text-muted-foreground">
+                                                        {plan.count} ventas
+                                                    </span>
+                                                </div>
+                                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full bg-primary transition-all duration-500`}
+                                                        style={{ width: `${percentage}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                    {metrics?.salesByPlan.length === 0 && (
+                                        <p className="text-sm text-muted-foreground text-center py-8">
+                                            No hay datos de planes.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Recent Members */}
+                    <Card className="lg:col-span-2">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                             <CardTitle className="text-base sm:text-lg font-semibold">
                                 Miembros Recientes
@@ -430,92 +507,6 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Second Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                    {/* Top Plans */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                            <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                                <Dumbbell className="h-4 w-4 text-primary" />
-                                Planes Populares
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {metrics?.salesByPlan.map((plan) => {
-                                        const totalCount = metrics.salesByPlan.reduce((acc, p) => acc + p.count, 0);
-                                        const percentage = totalCount > 0 ? (plan.count / totalCount) * 100 : 0;
-
-                                        return (
-                                            <div key={plan.planName} className="space-y-2">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="font-medium text-foreground">{plan.planName}</span>
-                                                    <span className="text-muted-foreground">
-                                                        {plan.count} ventas
-                                                    </span>
-                                                </div>
-                                                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                                    <div
-                                                        className={`h-full rounded-full bg-primary transition-all duration-500`}
-                                                        style={{ width: `${percentage}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                    {metrics?.salesByPlan.length === 0 && (
-                                        <p className="text-sm text-muted-foreground text-center py-8">
-                                            No hay datos de planes.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Quick Actions */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-base sm:text-lg font-semibold">
-                                Acciones Rápidas
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <Link href={`/${slug}/admin/members/new`}>
-                                    <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
-                                        <UserPlus className="h-5 w-5" />
-                                        <span className="text-xs sm:text-sm">Nuevo Miembro</span>
-                                    </Button>
-                                </Link>
-                                <Link href={`/${slug}/admin/members`}>
-                                    <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
-                                        <Users className="h-5 w-5" />
-                                        <span className="text-xs sm:text-sm">Ver Miembros</span>
-                                    </Button>
-                                </Link>
-                                <Link href={`/${slug}/admin/memberships`}>
-                                    <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
-                                        <CreditCard className="h-5 w-5" />
-                                        <span className="text-xs sm:text-sm">Membresías</span>
-                                    </Button>
-                                </Link>
-                                <Link href={`/${slug}/admin/users`}>
-                                    <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:text-primary transition-colors">
-                                        <Dumbbell className="h-5 w-5" />
-                                        <span className="text-xs sm:text-sm">Usuarios</span>
-                                    </Button>
-                                </Link>
-                            </div>
                         </CardContent>
                     </Card>
                 </div>

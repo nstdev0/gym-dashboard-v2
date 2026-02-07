@@ -12,6 +12,16 @@ export class PrismaDashboardRepository implements IDashboardRepository {
         const previousEnd = new Date(end.getTime() - duration);
         const organizationId = this.tenantId;
 
+        // Fetch organization settings to get currency
+        const organization = await this.prisma.organization.findUnique({
+            where: { id: organizationId },
+            select: { settings: true }
+        });
+
+        // Default to PEN if not set
+        const settings = (organization?.settings as any) || {};
+        const currency = settings.general?.currency || "PEN";
+
         // --- 1. REVENUE (Ingresos) ---
         // Logic: Sum pricePaid of Membership. Filter: organizationId AND createdAt in range.
         const [currentRevenue, previousRevenue] = await Promise.all([
@@ -146,6 +156,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
             salesByPlan,
             recentActivity,
             revenueOverTime,
+            currency,
         };
     }
 

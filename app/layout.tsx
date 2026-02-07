@@ -16,6 +16,8 @@ import { ReactQueryProvider } from "@/components/react-query-provider";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "./(backend)/api/uploadthing/core";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/server/infrastructure/persistence/prisma";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,16 +66,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { orgId } = await auth();
+  let initialFont: "inter" | "outfit" | "lato" = "inter";
+
+  if (orgId) {
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { settings: true }
+    });
+    const settings = (org?.settings as any) || {};
+    if (settings.appearance?.font) {
+      initialFont = settings.appearance.font;
+    }
+  }
+
   return (
     <html
       lang="es"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfit.variable} ${lato.variable}`}
+      data-font={initialFont}
     >
       <body className="font-sans antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider
@@ -86,7 +103,7 @@ export default function RootLayout({
             signInFallbackRedirectUrl="/"
             signUpFallbackRedirectUrl="/"
           >
-            <AppearanceProvider>
+            <AppearanceProvider initialFont={initialFont}>
               <ReactQueryProvider>
                 <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
                 {children}

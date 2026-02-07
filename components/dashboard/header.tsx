@@ -54,10 +54,6 @@ export function Header({ slug }: { slug: string }) {
             variant="outline"
             className="relative h-9 w-full justify-start rounded-[0.5rem] bg-background text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-40 lg:w-64"
             onClick={() => {
-              // Dispatch a custom event or simulate ctrl+k?
-              // Actually, simpler: The CommandMenu component handles its open state.
-              // We can make CommandMenu export a trigger or context.
-              // For now, let's just trigger constraints:
               document.dispatchEvent(
                 new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
               );
@@ -65,7 +61,7 @@ export function Header({ slug }: { slug: string }) {
           >
             <span className="hidden lg:inline-flex">Buscar...</span>
             <span className="inline-flex lg:hidden">Buscar...</span>
-            <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+            <kbd className="pointer-events-none absolute right-[0.3rem] top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
               <span className="text-xs">Ctrl</span>K
             </kbd>
           </Button>

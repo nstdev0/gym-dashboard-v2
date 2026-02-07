@@ -25,6 +25,9 @@ export const UpdateOrganizationSettingsSchema = z.object({
       emailAlerts: z.boolean().default(true),
       smsAlerts: z.boolean().default(false),
     }).optional(),
+    appearance: z.object({
+      font: z.enum(["inter", "outfit", "lato"]),
+    }).optional(),
   }).optional(),
 });
 

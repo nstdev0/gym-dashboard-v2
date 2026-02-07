@@ -13,6 +13,13 @@ import { UpdateOrganizationSettingsInput, UpdateOrganizationSettingsSchema } fro
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface SettingsFormProps {
     defaultValues: Partial<UpdateOrganizationSettingsInput>;
@@ -109,9 +116,26 @@ export function SettingsForm({ defaultValues }: SettingsFormProps) {
                                     render={({ field, fieldState }) => (
                                         <Field>
                                             <FieldLabel>Moneda Principal</FieldLabel>
-                                            <Input placeholder="PEN" {...field} />
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecciona una moneda" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="PEN">S/ (PEN)</SelectItem>
+                                                    <SelectItem value="USD">$ (USD)</SelectItem>
+                                                    <SelectItem value="EUR">€ (EUR)</SelectItem>
+                                                    <SelectItem value="MXN">$ (MXN)</SelectItem>
+                                                    <SelectItem value="COP">$ (COP)</SelectItem>
+                                                    <SelectItem value="CLP">$ (CLP)</SelectItem>
+                                                    <SelectItem value="ARS">$ (ARS)</SelectItem>
+                                                    <SelectItem value="BRL">R$ (BRL)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FieldDescription>
-                                                Código de moneda ISO (ej. PEN, USD).
+                                                Moneda para reportes y cobros.
                                             </FieldDescription>
                                             {fieldState.invalid && fieldState.error?.message && (
                                                 <FieldError errors={[fieldState.error]} />

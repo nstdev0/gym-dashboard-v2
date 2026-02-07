@@ -9,8 +9,12 @@ import {
   LayoutDashboard,
   Dumbbell,
   Package,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 
 import {
   CommandDialog,
@@ -20,7 +24,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 
 export function CommandMenu() {
@@ -28,6 +31,7 @@ export function CommandMenu() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
+  const { setTheme } = useTheme();
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -51,21 +55,7 @@ export function CommandMenu() {
       <CommandInput placeholder="Escribe un comando o busca..." />
       <CommandList>
         <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-        <CommandGroup heading="Sugerencias">
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => router.push(`/${slug}/admin/members`))
-            }
-          >
-            <Users className="mr-2 h-4 w-4" />
-            <span>Miembros</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => router.push(`/${slug}/admin`))}
-          >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
-          </CommandItem>
+        <CommandGroup heading="Acciones Rápidas">
           <CommandItem
             onSelect={() =>
               runCommand(() => router.push(`/${slug}/admin/members/new`))
@@ -74,9 +64,31 @@ export function CommandMenu() {
             <Smile className="mr-2 h-4 w-4" />
             <span>Nuevo Miembro</span>
           </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              runCommand(() => router.push(`/${slug}/admin/memberships/new`))
+            }
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Nueva Membresía</span>
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Navegación">
+          <CommandItem
+            onSelect={() => runCommand(() => router.push(`/${slug}/admin`))}
+          >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            <span>Dashboard</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              runCommand(() => router.push(`/${slug}/admin/members`))
+            }
+          >
+            <Users className="mr-2 h-4 w-4" />
+            <span>Miembros</span>
+          </CommandItem>
           <CommandItem
             onSelect={() =>
               runCommand(() => router.push(`/${slug}/admin/plans`))
@@ -108,7 +120,21 @@ export function CommandMenu() {
           >
             <Settings className="mr-2 h-4 w-4" />
             <span>Configuración</span>
-            <CommandShortcut>⌘S</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Tema">
+          <CommandItem onSelect={() => runCommand(() => setTheme("light"))}>
+            <Sun className="mr-2 h-4 w-4" />
+            <span>Claro</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => setTheme("dark"))}>
+            <Moon className="mr-2 h-4 w-4" />
+            <span>Oscuro</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => setTheme("system"))}>
+            <Laptop className="mr-2 h-4 w-4" />
+            <span>Sistema</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

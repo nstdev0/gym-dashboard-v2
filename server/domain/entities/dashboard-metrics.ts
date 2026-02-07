@@ -25,4 +25,5 @@ export interface DashboardMetrics {
         month: string;
         revenue: number;
     }[];
+    currency: string;
 }

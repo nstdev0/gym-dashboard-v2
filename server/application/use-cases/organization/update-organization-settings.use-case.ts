@@ -2,6 +2,7 @@
 import { prisma } from "@/server/infrastructure/persistence/prisma";
 import { Organization } from "@/generated/prisma/client";
 import { UpdateOrganizationSettingsInput } from "../../dtos/organizations.dto";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export class UpdateOrganizationSettingsUseCase {
     async execute(organizationId: string, input: UpdateOrganizationSettingsInput): Promise<Organization> {
@@ -10,7 +11,7 @@ export class UpdateOrganizationSettingsUseCase {
         // Fetch existing organization to merge settings
         const currentOrg = await prisma.organization.findUnique({
             where: { id: organizationId },
-            select: { settings: true }
+            select: { settings: true, name: true }
         });
 
         if (!currentOrg) {
@@ -42,9 +43,10 @@ export class UpdateOrganizationSettingsUseCase {
             general: safeMerge(currentSettings.general || {}, settings?.general || {}),
             operations: safeMerge(currentSettings.operations || {}, settings?.operations || {}),
             notifications: safeMerge(currentSettings.notifications || {}, settings?.notifications || {}),
+            appearance: safeMerge(currentSettings.appearance || {}, settings?.appearance || {}),
         }
 
-        return prisma.organization.update({
+        const updatedOrg = await prisma.organization.update({
             where: { id: organizationId },
             data: {
                 ...(name && { name }),
@@ -52,5 +54,24 @@ export class UpdateOrganizationSettingsUseCase {
                 settings: mergedSettings,
             },
         });
+
+        // Sync with Clerk if name or slug changed
+        // Note: Clerk Webhook will theoretically fire "organization.updated" and try to update DB again.
+        // The DB update above is the "source of truth" for this action.
+        // The webhook should handle idempotency or just re-apply the same data which is fine.
+        if (name && name !== currentOrg.name) {
+            try {
+                const clerk = await clerkClient();
+                await clerk.organizations.updateOrganization(organizationId, {
+                    name: name,
+                    slug: undefined // We are not allowing slug updates via this simplified settings form yet, but if we did: slug
+                });
+            } catch (error) {
+                console.error("Failed to sync organization update to Clerk", error);
+                // We might want to throw or just log. For now log, as DB update succeeded.
+            }
+        }
+
+        return updatedOrg;
     }
 }
