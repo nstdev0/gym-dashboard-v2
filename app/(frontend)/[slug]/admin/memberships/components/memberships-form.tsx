@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,7 @@ export default function MembershipForm({
         },
     });
 
-    const selectedPlanId = form.watch("planId");
+    const selectedPlanId = useWatch({ control: form.control, name: "planId" });
     const selectedPlan = plans?.find((p) => p.id === selectedPlanId);
 
     // Actualiza solo el precio, no el ID (el ID ya lo maneja el field.onChange)

@@ -12,6 +12,7 @@ model Organization {
   name               String
   slug               String           @unique
   isActive           Boolean          @default(true)
+  settings           Json?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   image              String?
@@ -58,8 +59,6 @@ model Subscription {
 model User {
   id             String        @id @default(cuid())
   email          String        @unique
-  firstName      String?
-  lastName       String?
   passwordHash   String?
   role           Role          @default(STAFF)
   organizationId String?
@@ -67,6 +66,8 @@ model User {
   updatedAt      DateTime      @updatedAt
   image          String?
   isActive       Boolean       @default(true)
+  firstName      String?
+  lastName       String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
@@ -90,8 +91,8 @@ model Member {
   image          String?
   imc            Float?
   weight         Float?
-  memberships    Membership[]
   organization   Organization @relation(fields: [organizationId], references: [id])
+  memberships    Membership[]
 
   @@unique([docType, docNumber, organizationId])
   @@unique([email, organizationId])

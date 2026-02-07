@@ -6,27 +6,23 @@ export interface MetricWithTrend {
 
 export interface DashboardMetrics {
     revenue: MetricWithTrend;
-    activeMembers: MetricWithTrend; // "Miembros Activos"
-    newMemberships: MetricWithTrend; // "Membresías Nuevas" (para el KPI "Total Miembros" o similar)
-    membersByPlan: {
+    activeMembers: MetricWithTrend;
+    expiringSoon: number;
+    salesByPlan: {
         planName: string;
         count: number;
         revenue: number;
     }[];
     recentActivity: {
         id: string;
-        name: string; // firstName + lastName
+        name: string;
         email: string;
         avatar?: string | null;
         planName?: string;
         joinedAt: Date;
     }[];
-    expiringMemberships: {
-        id: string;
-        memberName: string;
-        planName: string;
-        endDate: Date;
-        avatar?: string | null;
-        daysUntilExpiration: number;
+    revenueOverTime: {
+        month: string;
+        revenue: number;
     }[];
 }

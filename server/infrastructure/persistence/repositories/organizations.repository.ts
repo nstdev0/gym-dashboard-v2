@@ -17,6 +17,21 @@ export class OrganizationsRepository
     OrganizationsFilters
   >
   implements IOrganizationRepository {
+
+  /**
+   * Override findUnique to verify organizationId context usage.
+   * However, for "get current organization", we often just want findById(this.organizationId).
+   */
+  async findCurrent(): Promise<Organization | null> {
+    if (!this.organizationId) return null;
+
+    const org = await this.model.findUnique({
+      where: { id: this.organizationId },
+    });
+
+    return org as unknown as Organization | null;
+  }
+
   async buildPrismaClauses(
     filters: OrganizationsFilters,
   ): Promise<[Prisma.OrganizationWhereInput, Prisma.OrganizationOrderByWithRelationInput]> {
@@ -135,6 +150,7 @@ export class OrganizationsRepository
       newOrg.name,
       newOrg.slug,
       newOrg.isActive,
+      newOrg.settings
     );
   }
 }

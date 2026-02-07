@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import { prisma } from "@/server/infrastructure/persistence/prisma";
 import { LandingPage } from "@/components/landing-page";
 

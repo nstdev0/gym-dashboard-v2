@@ -1,16 +1,18 @@
-import { getContainer } from "@/server/di/container";
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { GetDashboardMetricsInput } from "@/server/domain/types/dashboard";
+import { createContext } from "@/server/lib/api-handler";
 
-export async function GET(request: Request) {
-    const { orgId } = await auth();
+export const GET = createContext<GetDashboardMetricsInput>(
+    (container) => container.getDashboardMetricsController,
+    (req) => {
+        const { searchParams } = new URL(req.url);
+        const fromParam = searchParams.get("from");
+        const toParam = searchParams.get("to");
+        const groupingParam = searchParams.get("grouping");
 
-    if (!orgId) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return {
+            from: fromParam ? new Date(fromParam) : undefined,
+            to: toParam ? new Date(toParam) : undefined,
+            grouping: (groupingParam === 'day' || groupingParam === 'month' || groupingParam === 'year') ? groupingParam : undefined
+        };
     }
-
-    const container = await getContainer();
-    const controller = container.getDashboardMetricsController;
-
-    return await controller.handle(request, orgId);
-}
+);

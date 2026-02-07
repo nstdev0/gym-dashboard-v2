@@ -14,6 +14,8 @@ import { DeleteOrganizationUseCase } from "@/server/application/use-cases/organi
 import { GetOrganizationByIdController } from "@/server/interface-adapters/controllers/organizations/get-organization-by-id.controller";
 import { UpdateOrganizationController } from "@/server/interface-adapters/controllers/organizations/update-organization.controller";
 import { DeleteOrganizationController } from "@/server/interface-adapters/controllers/organizations/delete-organization.controller";
+import { GetOrganizationController } from "@/server/interface-adapters/controllers/organization/get-organization.controller";
+import { GetOrganizationUseCase } from "@/server/application/use-cases/organization/get-organization.use-case";
 
 // --- Imports: Members ---
 import { MembersRepository } from "@persistence/repositories/members.repository";
@@ -82,7 +84,7 @@ import { DeleteUserController } from "../interface-adapters/controllers/users/de
 import { ClerkAuthService } from "../infrastructure/services/clerk-auth.service";
 
 // --- Imports: Dashboard ---
-import { PrismaDashboardRepository } from "../infrastructure/persistence/repositories/prisma-dashboard.repository";
+import { PrismaDashboardRepository } from "../infrastructure/persistence/repositories/dashboard.repository";
 import { GetDashboardMetricsUseCase } from "../application/use-cases/dashboard/get-dashboard-metrics.use-case";
 import { GetDashboardMetricsController } from "../interface-adapters/controllers/dashboard/get-dashboard-metrics.controller";
 
@@ -118,6 +120,9 @@ export const getContainer = cache(async () => {
   );
   const getOrganizationByIdController = new GetOrganizationByIdController(
     new GetOrganizationByIdUseCase(organizationsRepository),
+  );
+  const getOrganizationController = new GetOrganizationController(
+    new GetOrganizationUseCase(organizationsRepository),
   );
   const updateOrganizationController = new UpdateOrganizationController(
     new UpdateOrganizationUseCase(organizationsRepository),
@@ -254,7 +259,7 @@ export const getContainer = cache(async () => {
   // 7. DASHBOARD
   // ===========================================================================
   // Repo
-  const dashboardRepository = new PrismaDashboardRepository(prisma);
+  const dashboardRepository = new PrismaDashboardRepository(prisma, tenantId);
   // Use Case
   const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(dashboardRepository);
   // Controller
@@ -268,6 +273,7 @@ export const getContainer = cache(async () => {
     getAllOrganizationsController,
     createOrganizationController,
     getOrganizationByIdController,
+    getOrganizationController,
     updateOrganizationController,
     deleteOrganizationController,
     // Members

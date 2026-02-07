@@ -10,6 +10,7 @@ import { Camera, Image as ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing-hooks";
+import Image from "next/image";
 
 interface AvatarUploaderProps {
     value?: string;
@@ -139,7 +140,7 @@ export function AvatarUploader({
                             <span className="text-xs font-medium">Subiendo...</span>
                         </div>
                     ) : value ? (
-                        <img src={value} alt="Avatar" className="w-full h-full object-cover" />
+                        <Image src={value} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                         <div className="flex flex-col items-center text-gray-400">
                             <Camera className="w-8 h-8 mb-1" />

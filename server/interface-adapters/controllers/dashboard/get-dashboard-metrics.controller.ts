@@ -1,24 +1,16 @@
 import { GetDashboardMetricsUseCase } from "@/server/application/use-cases/dashboard/get-dashboard-metrics.use-case";
-import { NextResponse } from "next/server";
+import { ControllerExecutor } from "@/server/lib/api-handler";
+import { DashboardMetrics } from "@/server/domain/entities/dashboard-metrics";
+import { GetDashboardMetricsInput } from "@/server/domain/types/dashboard";
 
-export class GetDashboardMetricsController {
+export class GetDashboardMetricsController implements ControllerExecutor<GetDashboardMetricsInput, DashboardMetrics> {
     constructor(private getDashboardMetricsUseCase: GetDashboardMetricsUseCase) { }
 
-    async handle(request: Request, organizationId: string) {
-        try {
-            const { searchParams } = new URL(request.url);
-            const fromParam = searchParams.get("from");
-            const toParam = searchParams.get("to");
-
-            const from = fromParam ? new Date(fromParam) : undefined;
-            const to = toParam ? new Date(toParam) : undefined;
-
-            const metrics = await this.getDashboardMetricsUseCase.execute(organizationId, from, to);
-
-            return NextResponse.json(metrics);
-        } catch (error) {
-            console.error("Error getting dashboard metrics:", error);
-            return new NextResponse("Internal Server Error", { status: 500 });
-        }
+    async execute(input: GetDashboardMetricsInput) {
+        return await this.getDashboardMetricsUseCase.execute(
+            input.from,
+            input.to,
+            input.grouping
+        );
     }
 }

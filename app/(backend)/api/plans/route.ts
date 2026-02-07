@@ -1,4 +1,4 @@
-import { createPlanSchema, UpdatePlanSchema } from "@/server/application/dtos/plans.dto";
+import { createPlanSchema } from "@/server/application/dtos/plans.dto";
 import { PlansFilters } from "@/server/application/repositories/plans.repository.interface";
 import { createContext } from "@/server/lib/api-handler";
 import { PageableRequest } from "@/server/shared/common/pagination";

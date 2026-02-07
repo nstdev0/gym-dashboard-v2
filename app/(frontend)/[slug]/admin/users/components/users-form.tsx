@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,8 @@ export default function UserForm({
             lastName: initialData?.lastName || "",
         },
     });
+
+    const isActive = useWatch({ control: form.control, name: "isActive" });
 
     const { mutate: mutateUser, isPending } = useMutation({
         mutationFn: async (values: z.infer<typeof CreateUserSchema>) => {
@@ -185,7 +187,7 @@ export default function UserForm({
                         )}
                     />
                     <span className="text-xs text-muted-foreground mt-1 block">
-                        {form.watch("isActive") ? "Acceso permitido" : "Acceso denegado"}
+                        {isActive ? "Acceso permitido" : "Acceso denegado"}
                     </span>
                 </Field>
             </div>

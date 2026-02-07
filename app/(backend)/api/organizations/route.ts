@@ -26,7 +26,6 @@ export const POST = createContext(
     const body = await req.json();
     const validated = createOrganizationSchema.parse(body);
 
-    // Get userId from session for organization membership
     const { userId } = await auth();
     if (!userId) throw new Error("No autenticado");
 

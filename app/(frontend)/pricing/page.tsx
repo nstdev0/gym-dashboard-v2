@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -22,7 +21,7 @@ function PricingCard({
     buttonText?: string;
     isFree?: boolean;
 }) {
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const router = useRouter();
     const { userId } = useAuth();
 

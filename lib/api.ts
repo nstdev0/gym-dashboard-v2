@@ -12,8 +12,6 @@ export class ApiError extends Error {
   }
 }
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-
 interface ApiFetchOptions extends RequestInit {
   params?: Record<string, string | number | undefined>; // Para /:id
   query?: Record<string, string | number | boolean | undefined | null>; // Para ?page=1

@@ -63,7 +63,6 @@ export async function POST(req: Request) {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             line_items: [
-                // @ts-ignore
                 lineItem
             ],
             mode: "subscription", // O "payment" si es pago único

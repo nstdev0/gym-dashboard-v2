@@ -1,6 +1,5 @@
 import { getContainer } from "@/server/di/container";
 import UsersViewPage from "./components/view-page";
-import { Role } from "@/generated/prisma/enums";
 
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

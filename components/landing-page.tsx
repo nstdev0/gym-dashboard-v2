@@ -273,7 +273,7 @@ export function LandingPage({ dashboardUrl, isLoggedIn }: { dashboardUrl?: strin
                                         <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                                     ))}
                                 </div>
-                                <p className="text-muted-foreground italic">"{testimonial.quote}"</p>
+                                <p className="text-muted-foreground italic">&quot;{testimonial.quote}&quot;</p>
                                 <div className="mt-6 flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary to-blue-500" />
                                     <div>

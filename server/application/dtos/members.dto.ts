@@ -1,5 +1,5 @@
 import { z } from "zod";
-import CapitalizeText from "./capitalize-text";
+import CapitalizeText from "./helpers/capitalize-text";
 import { DocType, Gender } from "@/server/domain/entities/Member";
 
 // --- HELPERS ---
@@ -75,6 +75,7 @@ const MemberBaseSchema = z.object({
     }, { message: "El miembro debe tener al menos 5 años" }),
 
   gender: z.nativeEnum(Gender, { message: "Género inválido" }).optional(),
+
   height: optionalHeight,
   weight: optionalWeight,
   imc: optionalImc,

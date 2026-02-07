@@ -22,4 +22,5 @@ export interface IOrganizationRepository extends IBaseRepository<
     input: CreateOrganizationInput,
     userId: string,
   ): Promise<Organization>;
+  findCurrent(): Promise<Organization | null>;
 }

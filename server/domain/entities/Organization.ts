@@ -9,6 +9,7 @@ export class Organization extends BaseEntity {
     public name: string,
     public slug: string,
     public isActive: boolean,
+    public settings: any,
   ) {
     super(id, organizationId, createdAt, updatedAt);
   }
