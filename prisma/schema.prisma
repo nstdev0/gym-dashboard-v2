@@ -15,8 +15,8 @@ model Organization {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   image              String?
-  settings           Json?
   organizationPlanId String
+  settings           Json?
   members            Member[]
   memberships        Membership[]
   plan               OrganizationPlan @relation(fields: [organizationPlanId], references: [id])

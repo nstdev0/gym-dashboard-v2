@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/server/infrastructure/persistence/prisma";
 import { LandingPage } from "@/components/landing-page";
+import { prisma } from "@/server/infrastructure/persistence/prisma";
 
 export default async function RootPage() {
   // 1. Verificación básica de sesión en Clerk
