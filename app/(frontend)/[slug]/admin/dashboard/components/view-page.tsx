@@ -351,6 +351,7 @@ export default function DashboardViewPage() {
                                                 axisLine={false}
                                             />
                                             <YAxis
+                                                width={80}
                                                 stroke="#888888"
                                                 fontSize={12}
                                                 tickLine={false}

@@ -46,7 +46,7 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "Gym Dashboard v2",
+  title: "Izi Gym SaaS",
   description: "Supervisa el desempeño de tu gimnasio",
   keywords: [
     "gym",
