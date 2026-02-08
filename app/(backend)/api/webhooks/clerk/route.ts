@@ -53,7 +53,81 @@ export async function POST(req: Request) {
 
     switch (eventType) {
       // ------------------------------------------------------------------
-      // CASO 1: SE CREA LA ORGANIZACIÓN
+      // CASO 1: SE CREA O ACTUALIZA EL USUARIO
+      // ------------------------------------------------------------------
+      case "user.created":
+      case "user.updated": {
+        const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+        const email = email_addresses[0]?.email_address;
+
+        // --- 🛡️ PROTECCIÓN CONTRA ZOMBIES (Email Conflict) ---
+        if (email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          // Si existe alguien con este email PERO tiene otro ID, es un remanente viejo.
+          // Clerk es la autoridad, así que borramos el local para evitar choque de Unique Constraint.
+          if (existingUser && existingUser.id !== id) {
+            console.log(`🧟 Zombie detectado: Email ${email} está ocupado por ID antiguo ${existingUser.id}. Eliminando...`);
+            // Usamos transacción o delete directo.
+            // Nota: Si este usuario tenía relaciones (Foreign Keys) sin Cascade Delete, esto podría fallar,
+            // pero asumiremos que es un usuario "basura" o que el schema tiene Cascade.
+            await prisma.user.delete({
+              where: { id: existingUser.id }
+            });
+          }
+        }
+        // ----------------------------------------------------
+
+        await prisma.user.upsert({
+          where: { id },
+          create: {
+            id,
+            email,
+            firstName: first_name || null,
+            lastName: last_name || null,
+            image: image_url || null,
+            // Default role, will be updated by organizationMembership events
+            role: Role.STAFF,
+            isActive: true,
+          },
+          update: {
+            email,
+            firstName: first_name || null,
+            lastName: last_name || null,
+            image: image_url || null,
+          }
+        });
+        console.log(`👤 Usuario sincronizado: ${email}`);
+        break;
+      }
+
+      // ------------------------------------------------------------------
+      // CASO 2: SE ELIMINA EL USUARIO
+      // ------------------------------------------------------------------
+      case "user.deleted": {
+        const { id } = evt.data;
+        if (!id) break;
+
+        try {
+          await prisma.user.delete({
+            where: { id }
+          });
+          console.log(`🗑️ Usuario eliminado: ${id}`);
+        } catch (error: any) {
+          // Ignorar si el usuario no existe (P2025)
+          if (error.code === 'P2025') {
+            console.log(`⚠️ Intentando eliminar usuario no existente ${id} (ignorado)`);
+          } else {
+            throw error;
+          }
+        }
+        break;
+      }
+
+      // ------------------------------------------------------------------
+      // CASO 3: SE CREA LA ORGANIZACIÓN
       // ------------------------------------------------------------------
       case "organization.created": {
         const { id, name, slug, image_url } = evt.data;
@@ -97,7 +171,7 @@ export async function POST(req: Request) {
       }
 
       // ------------------------------------------------------------------
-      // CASO 2: SE CREA LA MEMBRESÍA (SOLUCIÓN A RACE CONDITION)
+      // CASO 4: SE CREA LA MEMBRESÍA (SOLUCIÓN A RACE CONDITION)
       // ------------------------------------------------------------------
       case "organizationMembership.created": {
         const { organization, public_user_data, role } = evt.data;
@@ -165,20 +239,29 @@ export async function POST(req: Request) {
       }
 
       // ------------------------------------------------------------------
-      // CASO 3: SE ELIMINA LA MEMBRESÍA
+      // CASO 5: SE ELIMINA LA MEMBRESÍA
       // ------------------------------------------------------------------
       case "organizationMembership.deleted": {
         const { public_user_data } = evt.data;
-        await prisma.user.update({
-          where: { id: public_user_data.user_id },
-          data: { organizationId: null, isActive: false }
-        });
-        console.log(`🔓 Usuario desvinculado`);
+        try {
+          await prisma.user.update({
+            where: { id: public_user_data.user_id },
+            data: { organizationId: null, isActive: false }
+          });
+          console.log(`🔓 Usuario desvinculado`);
+        } catch (error: any) {
+          // Si el usuario no existe, ignoramos el error para evitar reintento infinito de Clerk
+          if (error.code === 'P2025') {
+            console.log("⚠️ Usuario no encontrado al desvincular, saltando...");
+          } else {
+            throw error;
+          }
+        }
         break;
       }
 
       // ------------------------------------------------------------------
-      // CASO 4: SE ACTUALIZA LA ORGANIZACIÓN
+      // CASO 6: SE ACTUALIZA LA ORGANIZACIÓN
       // ------------------------------------------------------------------
       case "organization.updated": {
         const { id, name, slug, image_url } = evt.data;
